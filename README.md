@@ -5,7 +5,7 @@ The Streamlit application: https://electricmobilityberlin-macl9yhkzzjgq7utshfaph
 Code Documentation:
 Program:
 
-Data frames:
+**Data frames:**
 
 1- df_geodata_plz: contain geographical information related to postal code areas (PLZ) in Berlin. It has 2 columns: 
 
@@ -61,7 +61,7 @@ Data frames:
     
     - lat, long: The geographical coordinates (latitude and longitude) representing the approximate central location of the postal code area.
 
-methods.py:
+**methods.py:**
 
 1- preprop_lstat(dfr, dfg, pdict): designed to preprocess data from the Ladesaeulenregister.csv dataset, focusing on electric vehicle charging stations, and combine it with geographical data. It performs data cleaning, transformation, and filtering to prepare the dataset for further analysis, particularly for the city of Berlin. The parameters are:
 
@@ -102,9 +102,10 @@ A Streamlit application is created that displays a map of Berlin divided into di
 For both views, the color scale starts with a light yellow for areas with lower values, becoming progressively darker until reaching a dark orange color for areas with higher numbers of residents or charging stations. This color gradient helps users easily visualize the density of both residents and charging stations across the city.
 
 
-Question: Analyze both geovisualizations: Where do you see demand for additional electric charging stations?
+**Question: Analyze both geovisualizations: Where do you see demand for additional electric charging stations?**
 
-Answer:
+**Answer:**
+
 High-demand postal code areas (PLZ) for electric vehicle (EV) stations were identified by analyzing the color intensity on the charging station map (light yellow) and the population map (medium orange or darker). A threshold was set for the number of residents (greater than 15,000) and the number of charging stations (fewer than 11). After merging the two datasets, gdf_lstat3 and gdf_residents2, we applied these thresholds to filter for areas with both high population and low charging station availability.
 
 Based on this criterion, the postal codes (PLZ) with the highest demand for EV charging stations are:
