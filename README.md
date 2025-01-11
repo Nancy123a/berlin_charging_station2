@@ -91,11 +91,11 @@ It returns result_df A DataFrame grouped by postal code (PLZ), containing with t
     
 It returns None. 
 
-HelperTools.py:
+**HelperTools.py:**
 
 - timer(func): The timer decorator function measures and prints the execution time of any function it wraps. It calculates how long the decorated function takes to run and prints the duration along with the function's documentation (docstring).
 
-Interpretation of results:
+**Interpretation of results:**
 
 A Streamlit application is created that displays a map of Berlin divided into different postal code areas (PLZ). Users can toggle between two views: one showing the number of residents in each area and the other displaying the number of available charging stations. The number of charging stations ranges from 1 to 95, while the number of residents varies from 139 to 35,353.
 
