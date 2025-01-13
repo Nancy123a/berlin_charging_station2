@@ -9,4 +9,4 @@ class CSOperator(Base):
     cs_operator_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    number_reports_assigned=password = Column(Integer, nullable=False)
+    number_reports_assigned = Column(Integer, nullable=False)
