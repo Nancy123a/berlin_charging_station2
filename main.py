@@ -5,6 +5,9 @@ from core import register_methods as register
 from core import methods as m1
 from config import pdict
 import streamlit as st
+from database.database import SessionLocal,engine,Base
+from sqlalchemy import create_engine,inspect
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -14,7 +17,7 @@ def main():
         # Initialize session state
         st.session_state.logged_in = False
         st.session_state.role = None  # Add role to session state
-
+        
     if st.session_state.logged_in:
         after_registration(st.session_state.role)
     else:
