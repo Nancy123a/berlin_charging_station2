@@ -42,7 +42,7 @@ from src.register_context.domain.entities.csoperator import CSOperator
 
 from src.search_context.domain.entities.chargingstation import ChargingStation
 
-from src.domain.value_objects.password import Password
+from src.register_context.domain.value_objects.password import Password
 
 
 def inspect_and_create_tables():
