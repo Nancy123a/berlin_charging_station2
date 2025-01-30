@@ -19,7 +19,7 @@ sys.path.append(str(project_root))
 from sqlalchemy import create_engine,inspect
 from sqlalchemy.orm import sessionmaker
 from database.database import SessionLocal,engine,Base
-
+from src.search_context.domain.value_objects.postal_code import PostalCode
 from src.search_context.domain.entities.chargingstation import ChargingStation
 from src.search_context.application.services.ChargingStationService import ChargingStationService
 from src.search_context.infrastructure.repositories.ChargingStationRepository import ChargingStationRepository
@@ -138,7 +138,7 @@ def make_streamlit_electric_Charging_resid(df,dfr1, dfr2,role):
     #charging_stations = chargingstation_service.find_stations_by_postal_code('10559')
 
     #for station in charging_stations:
-     #   st.write(station.charging_station.street)  # ✅ Access `charging_station` before using `.street`
+     #   st.write(station.charging_station.street)  
     if role=="user":
         menu = ["Search Station", "Report Malfunction","Notifications"]
     elif role=="admin":
@@ -181,7 +181,54 @@ def make_streamlit_electric_Charging_resid(df,dfr1, dfr2,role):
                     'fillOpacity': 0.7
                 }
                 folium.GeoJson(row['geometry'], style_function=style, tooltip=popup).add_to(m)
-               
+            if search_button:
+                try:
+                    session = SessionLocal()
+                    postal_code = PostalCode(search_query)  
+                    chargingstation_repository = ChargingStationRepository(SessionLocal())
+                    chargingstation_service = ChargingStationService(chargingstation_repository)
+                    charging_stations = chargingstation_service.find_stations_by_postal_code(postal_code.value)
+
+                    latitudes = []
+                    longitudes = []
+                    if charging_stations:
+                        for station in charging_stations:
+                            longitude=station.charging_station.longitude
+                            latitude=station.charging_station.latitude
+                            latitudes.append(latitude)
+                            longitudes.append(longitude)
+                            # Get color based on the charging station's power
+                            power_category, color = get_power_category_and_color(station.charging_station.power_charging_dev)
+                            popup_content = f"""
+                            <div style="font-size: 14px;">
+                            <h4 style="color: #007bff;">Charging Station Information</h4>
+                            <strong>Street:</strong> {station.charging_station.street}<br>
+                            <strong>District:</strong> {station.charging_station.district}<br>
+                            <strong>Location:</strong> {station.charging_station.location}<br>
+                            <strong>Power Charging Device:</strong> {station.charging_station.power_charging_dev} kW<br>
+                            <strong>Charging Device Type:</strong> {station.charging_station.type_charging_device}<br>
+                            <strong>Operator:</strong> {station.charging_station.operator}<br>
+                            <strong>Power Category:</strong> {power_category}<br><br>
+                            <p style="color: #888; font-size: 12px;">Click on the marker for more details.</p>
+                            </div>
+                            """
+
+                            folium.Marker(
+                                location=[latitude, longitude],
+                                popup=folium.Popup(popup_content, max_width=300),
+                                icon=folium.Icon(color=color, icon='cloud')
+                            ).add_to(m)
+
+                        min_latitude=min(latitudes)
+                        min_longitude=min(longitudes)
+                        max_latitude=max(latitudes)
+                        max_longitude=max(longitudes)
+                        m.fit_bounds([[min_latitude, min_longitude], [max_latitude, max_longitude]])
+                    else:
+                        st.error("No data found for the entered Postal Code (PLZ).")
+                    
+                except (TypeError, ValueError) as e:
+                    st.error(e)
         else:
             # Create a color map for Numbers
             color_map = LinearColormap(colors=['yellow', 'red'], vmin=dframe1['Number'].min(), vmax=dframe1['Number'].max())
