@@ -29,3 +29,9 @@ class AdminService:
             return AdminNotFoundEvent(username,password, "Admin already exists")
 
         return AdminLoginEvent(username,password)
+    
+    def get_all_admins(self):
+        return self.admin_repository.get_all_admins()
+    
+    def update_admin(self, admin: Admin):
+        self.admin_repository.update_admin(admin)

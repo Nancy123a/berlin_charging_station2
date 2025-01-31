@@ -26,6 +26,16 @@ from src.search_context.infrastructure.repositories.ChargingStationRepository im
 import database.import_database as db
 from geopy.exc import GeocoderTimedOut
 
+from src.report_context.domain.entities.report import Report
+from src.report_context.application.services.ReportService import ReportService
+from src.report_context.infrastructure.repositories.ReportRepository import ReportRepository
+from src.register_context.infrastructure.repositories.AdminRepository import AdminRepository
+from src.register_context.application.services.AdminService import AdminService
+from src.register_context.infrastructure.repositories.CSOperatorRepository import CSOperatorRepository
+from src.register_context.application.services.CSOperatorService import CSOperatorService
+import time
+from src.register_context.domain.entities.csoperator import CSOperator
+from src.register_context.domain.entities.admin import Admin
 
 def sort_by_plz_add_geometry(dfr, dfg, pdict): 
     dframe                  = dfr.copy()
@@ -147,6 +157,22 @@ def make_streamlit_electric_Charging_resid(df,dfr1, dfr2,role):
         menu = ["Search Station", "Resolve Malfunction Report"]
         
     choice = st.sidebar.selectbox("Select Option",menu)
+    
+    # REPORT REPOSITORY & SERVICE
+    report_repository = ReportRepository(SessionLocal())
+    report_service = ReportService(report_repository)
+    
+    # ADMIN REPOSITORY & SERVICE
+    admin_repository = AdminRepository(SessionLocal())
+    admin_service = AdminService(admin_repository)
+    
+    # CHARGING STATION REPOSITORY & SERVICE
+    chargingstation_repository = ChargingStationRepository(SessionLocal())
+    chargingstation_service = ChargingStationService(chargingstation_repository)
+    
+    # CHARGING STATION OPERATOR REPOSITORY & SERVICE
+    csoperator_repository = CSOperatorRepository(SessionLocal())
+    csoperator_service = CSOperatorService(csoperator_repository)
 
     if choice == "Search Station":
         dframe1 = dfr1.copy()
@@ -184,9 +210,7 @@ def make_streamlit_electric_Charging_resid(df,dfr1, dfr2,role):
             if search_button:
                 try:
                     session = SessionLocal()
-                    postal_code = PostalCode(search_query)  
-                    chargingstation_repository = ChargingStationRepository(SessionLocal())
-                    chargingstation_service = ChargingStationService(chargingstation_repository)
+                    postal_code = PostalCode(search_query)
                     charging_stations = chargingstation_service.find_stations_by_postal_code(postal_code.value)
 
                     latitudes = []
@@ -252,15 +276,184 @@ def make_streamlit_electric_Charging_resid(df,dfr1, dfr2,role):
         # Render the map
         folium_static(m, width=800, height=600)
 
-    elif choice == "Report Malfunction":
-        st.write("Report Malfunction")
-
-    return role
+    elif choice == "Report Malfunction":                        
+        st.title('Report Station Malfunction')
+        
+        description = st.text_area("Description")
+        severity, severity_label = st.selectbox("Select Severity", [("low", "Low"), ("medium", "Medium"), ("high", "High")], format_func=lambda x: x[1])
+        postal_code = st.text_input("Postal Code")
+        
+        
+        try:
+            if postal_code:
+                postal_code = PostalCode(postal_code).value
+                
+                searched_stations = chargingstation_service.find_stations_by_postal_code(postal_code)
+                
+                station_id, station_id_label  = st.selectbox("Select Station", [(station.charging_station.station_id, 'Station ID: ' + str(station.charging_station.station_id) + ' | Street: ' + station.charging_station.street) for station in searched_stations], format_func=lambda x: x[1])
+            
+            else:
+                station_id = None
+                    
+            submit_button = st.button("Submit")
+            
+            if submit_button:
+                if not description:
+                    st.error("Please fill Description")
+                elif not severity:
+                    st.error("Please select Severity")
+                elif not station_id:
+                    st.error("Please select Station")
+                else:                    
+                    # Get the first admin with less than 10 reports assigned
+                    all_admins = admin_service.get_all_admins()
+                    admin = None
+                    for admin in all_admins:
+                        if(admin.number_reports_assigned < 10):
+                            admin = admin
+                            break
+                    # If no admin with less than 10 reports is found, get the first admin
+                    if not admin:
+                        admin = all_admins[0]
+                    
+                    # Create the report
+                    report = Report(station_id=station_id, description=description, severity=severity, user_id=1, admin_id=admin.sys_admin_id)
+                    report_service.create_report(report)
+                    
+                    # Update the number of reports assigned to the admin
+                    admin.number_reports_assigned += 1
+                    admin_service.update_admin(admin)
+                    
+                    st.success("Malfunction issue report successfully forwarded")
+            
+        except (TypeError, ValueError) as e:
+            st.error(e)
     
+    elif choice == "Manage Malfunction Report":
+        st.title('Manage Malfunction Report')
+        
+        # Get all reports for logged in admin
+        all_reports = report_service.get_reports_by_admin_id(1)
+        
+        report_data = [{
+            "Report ID": report.report_id,
+            "Station ID": str(report.station_id),
+            "Street Name": report.chargingstation.street,
+            "Postal Code": report.chargingstation.postal_code,
+            "Station District": report.chargingstation.district,
+            "Description": report.description,
+            "Severity": report.severity,
+            "Status": report.status,
+            "Assigned To": report.csoperator.username if report.csoperator else "NA",
+            "Created At": report.created_at,
+            "Updated At": report.updated_at
+        } for report in all_reports]
+        
+        st.subheader("All Reports")
+        
+        report_df = pd.DataFrame(report_data)        
+        
+        st.dataframe(report_df, hide_index=True)
+        
+        reports_to_be_forwarded = [report for report in all_reports if report.status == "pending"]
+        
+        report = st.selectbox("Forward Report to Charging Station Operator", reports_to_be_forwarded, format_func=lambda x: "REPORT ID: " + str(x.report_id) + " | Station ID: " + str(x.station_id))
+        
+        forward_button = st.button("Forward")
+        
+        if forward_button:
+            try: 
+                # Get all charging station operators
+                all_csoperators = csoperator_service.get_all_csoperators()
+                cs_operator = None
+                # Get the first operator with less than 10 reports assigned
+                for operator in all_csoperators:
+                    if(operator.number_reports_assigned < 10):
+                        cs_operator = operator
+                        break
+                # If no operator with less than 10 reports is found, get the first operator
+                if not cs_operator:
+                    cs_operator = all_csoperators[0]
+                
+                # Update the report
+                report.csoperator = cs_operator
+                report.status = "managed"
+                report_service.update_report(report)
+                
+                # Update the charging station operator
+                cs_operator.number_reports_assigned += 1
+                csoperator_repository.update_csoperator(cs_operator)
+                
+                st.success("Malfunction issue report successfully forwarded")
+                
+                time.sleep(2)
+                st.rerun()
+            except (TypeError, ValueError) as e:
+                st.error(e)
 
+    elif choice == "Resolve Malfunction Report":
+        st.title("Resolve Malfunction Report")
+        
+        # Get all reports for logged in charging station operator
+        all_reports = report_service.get_reports_by_csoperator_id(1)
+        
+        report_data = [{
+            "Report ID": report.report_id,
+            "Station ID": str(report.station_id),
+            "Street Name": report.chargingstation.street,
+            "Postal Code": report.chargingstation.postal_code,
+            "Station District": report.chargingstation.district,
+            "Description": report.description,
+            "Severity": report.severity,
+            "Status": report.status,
+            "Created At": report.created_at,
+            "Updated At": report.updated_at
+        } for report in all_reports]
+        
+        st.subheader("Fixes to be Done")
+        
+        report_df = pd.DataFrame(report_data)        
+        
+        st.dataframe(report_df, hide_index=True)
+        
+        reports_to_be_resolved = [report for report in all_reports if report.status == "managed"]
+        
+        
+        
+        report = st.selectbox("Mark as Resolved", reports_to_be_resolved, format_func=lambda x: "REPORT ID: " + str(x.report_id) + " | Station ID: " + str(x.station_id))
+        
+        # all_reports find report.id
+        selected_report = None
+        
+        for rep in all_reports:
+            if rep.report_id == report.report_id:
+                selected_report = rep
+                break
+            
+        resolve_button = st.button("Resolve", key=report.report_id)
+        
+        if resolve_button:
+            try: 
+                # Update the admin
+                admin = selected_report.admin
+                admin.number_reports_assigned -= 1
+                admin_repository.update_admin(admin)
+                
+                # Update the charging station operator
+                cs_operator = selected_report.csoperator
+                cs_operator.number_reports_assigned -= 1
+                csoperator_repository.update_csoperator(cs_operator)
+                
+                # Update the report
+                report.status = "resolved"
+                report_service.update_report(report)
+                
+                st.success("Malfunction issue report successfully resolved")
+                
+                time.sleep(2)
+                st.rerun()
+            except (TypeError, ValueError) as e:
+                st.error(e)
 
-
-
-
-
-
+        
+    return role

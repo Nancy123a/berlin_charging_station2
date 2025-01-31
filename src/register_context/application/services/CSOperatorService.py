@@ -29,3 +29,9 @@ class CSOperatorService:
             return CSOperatorNotFoundEvent(username, password, "CSOperator not found")
 
         return CSOperatorLoginEvent(username, password)
+    
+    def get_all_csoperators(self):
+        return self.csoperator_repository.get_all_csoperators()
+    
+    def update_csoperator(self, csoperator: CSOperator):
+        self.csoperator_repository.update_csoperator(csoperator)

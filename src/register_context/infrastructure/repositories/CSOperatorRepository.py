@@ -16,3 +16,10 @@ class CSOperatorRepository:
 
     def signin_csoperator(self, username: str, password: str) -> bool:
         return self.session.query(CSOperator).filter_by(username=username,password=password).first()
+    
+    def get_all_csoperators(self):
+        return self.session.query(CSOperator).all()
+    
+    def update_csoperator(self, csoperator: CSOperator):
+        self.session.merge(csoperator)
+        self.session.commit()

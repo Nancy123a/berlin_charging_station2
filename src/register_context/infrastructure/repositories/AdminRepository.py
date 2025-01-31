@@ -16,4 +16,11 @@ class AdminRepository:
 
     def signin_admin(self, username: str, password: Password) -> bool:
         return self.session.query(Admin).filter_by(username=username,password=password).first()
+    
+    def get_all_admins(self):
+        return self.session.query(Admin).all()
+    
+    def update_admin(self, admin: Admin):
+        self.session.merge(admin)
+        self.session.commit()
  

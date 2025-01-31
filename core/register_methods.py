@@ -46,7 +46,7 @@ from src.register_context.domain.value_objects.password import Password
 
 
 def inspect_and_create_tables():
-    table_names = ['chargingstation','user', 'admin','csoperators']  # Table names to check
+    table_names = ['chargingstation','user', 'admin','csoperators','report']  # Table names to check
     inspector = inspect(engine)
     
     for table_name in table_names:

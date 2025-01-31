@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 from database.database import Base  # Adjust import path as needed
+from sqlalchemy.orm import relationship
 
 class ChargingStation(Base):
     __tablename__ = "chargingstation"
@@ -18,3 +19,5 @@ class ChargingStation(Base):
     commission_date = Column(Date)
     type_charging_device = Column(String)
     cs_status = Column(String)
+    
+    reports = relationship("Report", back_populates="chargingstation")
