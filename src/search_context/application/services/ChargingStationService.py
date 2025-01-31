@@ -2,6 +2,9 @@ from src.search_context.domain.entities.chargingstation import ChargingStation
 from src.search_context.domain.aggregates.chargingstation_aggregate import ChargingStationAggregate
 from src.search_context.infrastructure.repositories.ChargingStationRepository import ChargingStationRepository
 from src.search_context.domain.events.StationNotFoundEvent import StationNotFoundEvent
+from src.search_context.domain.events.PostalCodeNotFoundEvent import PostalCodeNotFoundEvent
+from src.search_context.domain.events.PostalCodeFoundEvent import PostalCodeFoundEvent
+from src.search_context.domain.events.StationFoundEvent import StationFoundEvent
 from src.search_context.domain.value_objects.postal_code import PostalCode
 from typing import List, Union
 
@@ -11,7 +14,12 @@ class ChargingStationService:
         self.chargingstation_repository = station_repository
 
     def verify_postal_code(self,postcode:str):
-        return PostalCode(postcode)
+        try:
+            # Convert postal_code string to PostalCode object
+            postal_code_obj = PostalCode(postcode)
+            return PostalCodeFoundEvent(postal_code_obj)
+        except ValueError as e:
+            return PostalCodeNotFoundEvent(PostalCode(postcode),str(e))
 
     def find_stations_by_postal_code(self, postal_code: str) -> Union[List[ChargingStationAggregate], StationNotFoundEvent]:
         """Retrieve a list of ChargingStation aggregates by postal code."""

@@ -26,6 +26,8 @@ from src.search_context.infrastructure.repositories.ChargingStationRepository im
 import database.import_database as db
 from geopy.exc import GeocoderTimedOut
 from folium import Popup, Marker
+from src.search_context.domain.events.PostalCodeFoundEvent import PostalCodeFoundEvent
+from src.search_context.domain.events.PostalCodeNotFoundEvent import PostalCodeNotFoundEvent
 from core import register_methods as register
 
 def sort_by_plz_add_geometry(dfr, dfg, pdict): 
@@ -191,36 +193,36 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
                 session = SessionLocal()
                 chargingstation_repository = ChargingStationRepository(SessionLocal())
                 chargingstation_service = ChargingStationService(chargingstation_repository)
-                chargingstation_service.verify_postal_code(search_query)
-                charging_stations = chargingstation_service.find_stations_by_postal_code(search_query)
-
-                if charging_stations:
-                    latitudes, longitudes = [], []
-                    for station in charging_stations:
-                        latitude = station.charging_station.latitude
-                        longitude = station.charging_station.longitude
-                        latitudes.append(latitude)
-                        longitudes.append(longitude)
-
-                        power_category, color = get_power_category_and_color(station.charging_station.power_charging_dev)
-                        popup_content = f"""
-                        <div style="font-size: 14px;">
-                        <h4 style="color: #007bff;">Charging Station Information</h4>
-                        <strong>Street:</strong> {station.charging_station.street}<br>
-                        <strong>District:</strong> {station.charging_station.district}<br>
-                        <strong>Location:</strong> {station.charging_station.location}<br>
-                        <strong>Power Charging Device:</strong> {station.charging_station.power_charging_dev} kW<br>
-                        <strong>Charging Device Type:</strong> {station.charging_station.type_charging_device}<br>
-                        <strong>Operator:</strong> {station.charging_station.operator}<br>
-                        <strong>Power Category:</strong> {power_category}<br><br>
-                        <p style="color: #888; font-size: 12px;">Click on the marker for more details.</p>
-                        </div>
-                        """
-                        Marker(location=[latitude, longitude],
-                               popup=Popup(popup_content, max_width=300),
-                               icon=folium.Icon(color=color, icon='cloud')).add_to(m)
-
-                    m.fit_bounds([[min(latitudes), min(longitudes)], [max(latitudes), max(longitudes)]])
+                event=chargingstation_service.verify_postal_code(search_query)
+                if isinstance(event, PostalCodeFoundEvent):
+                    charging_stations = chargingstation_service.find_stations_by_postal_code(event.postal_code)
+                    if charging_stations:
+                        latitudes, longitudes = [], []
+                        for station in charging_stations:
+                            latitude = station.charging_station.latitude
+                            longitude = station.charging_station.longitude
+                            latitudes.append(latitude)
+                            longitudes.append(longitude)
+        
+                            power_category, color = get_power_category_and_color(station.charging_station.power_charging_dev)
+                            popup_content = f"""
+                            <div style="font-size: 14px;">
+                            <h4 style="color: #007bff;">Charging Station Information</h4>
+                            <strong>Street:</strong> {station.charging_station.street}<br>
+                            <strong>District:</strong> {station.charging_station.district}<br>
+                            <strong>Location:</strong> {station.charging_station.location}<br>
+                            <strong>Power Charging Device:</strong> {station.charging_station.power_charging_dev} kW<br>
+                            <strong>Charging Device Type:</strong> {station.charging_station.type_charging_device}<br>
+                            <strong>Operator:</strong> {station.charging_station.operator}<br>
+                            <strong>Power Category:</strong> {power_category}<br><br>
+                            <p style="color: #888; font-size: 12px;">Click on the marker for more details.</p>
+                            </div>
+                            """
+                            Marker(location=[latitude, longitude],
+                                   popup=Popup(popup_content, max_width=300),
+                                   icon=folium.Icon(color=color, icon='cloud')).add_to(m)
+        
+                            m.fit_bounds([[min(latitudes), min(longitudes)], [max(latitudes), max(longitudes)]])
                 else:
                     st.error("No data found for the entered Postal Code (PLZ).")
 
@@ -235,12 +237,3 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         st.write("Report Malfunction")
 
     return role
-
-    
-
-
-
-
-
-
-
