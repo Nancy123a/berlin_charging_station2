@@ -17,8 +17,6 @@ def main():
         # Initialize session state
         st.session_state.logged_in = False
         st.session_state.role = None  # Add role to session state
-    
-    #sidebar_placeholder = st.sidebar.empty()  # This will clear the sidebar when needed
 
     if st.session_state.logged_in:
         after_registration(st.session_state.role)
@@ -31,7 +29,6 @@ def main():
             st.session_state.logged_in = True
             st.session_state.role = role  # Save role in session state
             st.session_state.userid = userid  # Save user ID in session state
-            #sidebar_placeholder.empty()
             st.rerun()  # Refresh the app to show the new state
 
 

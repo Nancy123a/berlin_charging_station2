@@ -189,10 +189,10 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         if search_button:
             try:
                 session = SessionLocal()
-                postal_code = PostalCode(search_query)
                 chargingstation_repository = ChargingStationRepository(SessionLocal())
                 chargingstation_service = ChargingStationService(chargingstation_repository)
-                charging_stations = chargingstation_service.find_stations_by_postal_code(postal_code.value)
+                chargingstation_service.verify_postal_code(search_query)
+                charging_stations = chargingstation_service.find_stations_by_postal_code(search_query)
 
                 if charging_stations:
                     latitudes, longitudes = [], []

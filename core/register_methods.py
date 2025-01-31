@@ -58,113 +58,73 @@ def inspect_and_create_tables():
     existing_tables = inspector.get_table_names()
     print('EXXXXXISTING',existing_tables)
 
+
 def register_login():
     menu = ["Login", "Register"]
     choice = st.sidebar.selectbox("Select Option", menu)
 
     if choice == "Login":
         st.subheader("Login Form")
-        
-        # Create login form
         username = st.text_input("Username")
         password = st.text_input("Password", type='password')
         role = st.selectbox("Select Role", ["user", "admin", "csoperator"])
-        
+
         if st.button("Login"):
             try:
-                password = Password(password)
-                if role == "user":
-                    user_repository = UserRepository(SessionLocal())
-                    user_service = UserService(user_repository)
-                    event = user_service.login_user(username, password.value)
+                repository_class = {"user": UserRepository, "admin": AdminRepository, "csoperator": CSOperatorRepository}[role]
+                service_class = {"user": UserService, "admin": AdminService, "csoperator": CSOperatorService}[role]
+                login_method = {"user": "login_user", "admin": "login_admin", "csoperator": "login_csoperator"}[role]
+                event_class = {"user": UserLoginEvent, "admin": AdminLoginEvent, "csoperator": CSOperatorLoginEvent}[role]
+                not_found_class = {"user": UserNotFoundEvent, "admin": AdminNotFoundEvent, "csoperator": CSOperatorNotFoundEvent}[role]
+                
+                repository = repository_class(SessionLocal())
+                service = service_class(repository)
+                
+                service.verify_password(password)
+                event = getattr(service, login_method)(username, password)
 
-                    if isinstance(event, UserLoginEvent):
-                        return role, event.user_id
-                    elif isinstance(event, UserNotFoundEvent):
-                        st.error("Either you didn't register, or your username and password are incorrect")
-
-                elif role == "admin":
-                    admin_repository = AdminRepository(SessionLocal())
-                    admin_service = AdminService(admin_repository)
-                    event = admin_service.login_admin(username, password.value)
-
-                    if isinstance(event, AdminLoginEvent):
-                        return role, event.sys_admin_id
-                    elif isinstance(event, AdminNotFoundEvent):
-                        st.error("Either you didn't register, or your username and password are incorrect")
-
-                elif role == "csoperator":
-                    csoperator_repository = CSOperatorRepository(SessionLocal())
-                    csoperator_service = CSOperatorService(csoperator_repository)
-                    event = csoperator_service.login_csoperator(username, password.value)
-
-                    if isinstance(event, CSOperatorLoginEvent):
-                        return role, event.cs_operator_id
-                    elif isinstance(event, CSOperatorNotFoundEvent):
-                        st.error("Either you didn't register, or your username and password are incorrect")
-
+                if isinstance(event, event_class):
+                    return role, event.user_id if role == "user" else event.sys_admin_id if role == "admin" else event.cs_operator_id
+                elif isinstance(event, not_found_class):
+                    st.error("Invalid username or password")
             except (TypeError, ValueError) as e:
                 st.error(e)
 
     elif choice == "Register":
         st.subheader("Registration Form")
-
-        # Create registration form
         new_username = st.text_input("New Username")
         new_password = st.text_input("New Password", type='password')
-        confirm_password = st.text_input("Confirm Password", type="password")
+        confirm_password = st.text_input("Confirm Password", type='password')
         role = st.selectbox("Select Role", ["user", "admin", "csoperator"])
 
         if st.button("Register"):
+            if new_password != confirm_password:
+                st.error("Passwords do not match")
+                return None, None
+            
+            if not new_username:
+                st.error("Please enter a username")
+                return None, None
+
             try:
-                password = Password(new_password)
-                if password.value == confirm_password:
-                    if new_username == "":
-                        st.error("Please enter your username")
-                    else:
-                        if role == "user":
-                            user_repository = UserRepository(SessionLocal())
-                            user_service = UserService(user_repository)
-                            event = user_service.register_user(new_username, new_password)
+                repository_class = {"user": UserRepository, "admin": AdminRepository, "csoperator": CSOperatorRepository}[role]
+                service_class = {"user": UserService, "admin": AdminService, "csoperator": CSOperatorService}[role]
+                register_method = {"user": "register_user", "admin": "register_admin", "csoperator": "register_csoperator"}[role]
+                created_class = {"user": UserCreatedEvent, "admin": AdminCreatedEvent, "csoperator": CSOperatorCreatedEvent}[role]
+                not_found_class = {"user": UserNotFoundEvent, "admin": AdminNotFoundEvent, "csoperator": CSOperatorNotFoundEvent}[role]
 
-                            if isinstance(event, UserCreatedEvent):
-                                st.success('Horayyy!! You have successfully registered')
-                                return role, None
-                            elif isinstance(event, UserNotFoundEvent):
-                                st.error('Username already exists. Please enter a different username')
+                repository = repository_class(SessionLocal())
+                service = service_class(repository)
+                
+                service.verify_password(new_password)
+                event = getattr(service, register_method)(new_username, new_password)
 
-                        elif role == "admin":
-                            admin_repository = AdminRepository(SessionLocal())
-                            admin_service = AdminService(admin_repository)
-                            event = admin_service.register_admin(new_username, new_password)
-
-                            if isinstance(event, AdminCreatedEvent):
-                                st.success('Horayyy!! You have successfully registered')
-                                return role, None
-                            elif isinstance(event, AdminNotFoundEvent):
-                                st.error('Username already exists. Please enter a different username')
-
-                        else:  # CSOperator
-                            csoperator_repository = CSOperatorRepository(SessionLocal())
-                            csoperator_service = CSOperatorService(csoperator_repository)
-                            event = csoperator_service.register_csoperator(new_username, new_password)
-
-                            if isinstance(event, CSOperatorCreatedEvent):
-                                st.success('Horayyy!! You have successfully registered')
-                                return role, None
-                            elif isinstance(event, CSOperatorNotFoundEvent):
-                                st.error('Username already exists. Please enter a different username')
-
-                else:
-                    st.error("Please enter the same password")
-
+                if isinstance(event, created_class):
+                    st.success("Registration successful!")
+                    return role, None
+                elif isinstance(event, not_found_class):
+                    st.error("Username already exists")
             except (TypeError, ValueError) as e:
                 st.error(e)
 
-    # Return None if no valid login or registration action took place
     return None, None
-
-
-
-
-

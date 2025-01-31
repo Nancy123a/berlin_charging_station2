@@ -4,6 +4,7 @@ from src.register_context.domain.events.AdminCreatedEvent import AdminCreatedEve
 from src.register_context.domain.events.AdminLoginEvent import AdminLoginEvent
 from src.register_context.domain.events.AdminNotFoundEvent import AdminNotFoundEvent
 from src.register_context.infrastructure.repositories.AdminRepository import AdminRepository
+from src.register_context.domain.value_objects.password import Password
 
 class AdminService:
     def __init__(self, admin_repository: AdminRepository):
@@ -29,3 +30,6 @@ class AdminService:
             return AdminNotFoundEvent(username, password, "CSOperator not found")
 
         return AdminLoginEvent(existing_admin.sys_admin_id,username, password)
+
+    def verify_password(self,password:str):
+        return Password(password)
