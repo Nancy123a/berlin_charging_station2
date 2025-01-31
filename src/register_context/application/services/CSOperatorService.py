@@ -4,6 +4,7 @@ from src.register_context.domain.events.CSOperatorCreatedEvent import CSOperator
 from src.register_context.domain.events.CSOperatorLoginEvent import CSOperatorLoginEvent
 from src.register_context.domain.events.CSOperatorNotFoundEvent import CSOperatorNotFoundEvent
 from src.register_context.infrastructure.repositories.CSOperatorRepository import CSOperatorRepository
+from src.register_context.domain.value_objects.password import Password
 
 class CSOperatorService:
     def __init__(self, csoperator_repository: CSOperatorRepository):
@@ -35,3 +36,7 @@ class CSOperatorService:
     
     def update_csoperator(self, csoperator: CSOperator):
         self.csoperator_repository.update_csoperator(csoperator)
+        return CSOperatorLoginEvent(existing_csoperator.cs_operator_id,username, password)
+
+    def verify_password(self,password:str):
+        return Password(password)

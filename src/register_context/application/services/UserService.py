@@ -4,10 +4,14 @@ from src.register_context.domain.events.UserCreatedEvent import UserCreatedEvent
 from src.register_context.domain.events.UserLoginEvent import UserLoginEvent
 from src.register_context.domain.events.UserNotFoundEvent import UserNotFoundEvent
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
+from src.register_context.domain.value_objects.password import Password
 
 class UserService:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
+
+    def verify_password(self,password:str):
+        return Password(password)
 
     def register_user(self, username: str, password: str) -> UserCreatedEvent:
         # Check if the user already exists
@@ -29,4 +33,4 @@ class UserService:
             # User not found, return failure event
             return UserNotFoundEvent(username, password, "User not found")
 
-        return UserLoginEvent(username=username, password=password)
+        return UserLoginEvent(existing_user.user_id,username=username, password=password)
