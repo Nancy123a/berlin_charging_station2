@@ -4,13 +4,13 @@ from pathlib import Path
 import os
 from sqlalchemy.exc import IntegrityError  # Import for handling constraint violation error
 
-project_root = Path(os.getcwd()).resolve().parent  # Adjust .parent if needed
+project_root = Path(os.getcwd()).resolve().parent.parent  # Adjust .parent if needed
 sys.path.append(str(project_root))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.sqldatabase.database import Base, SessionLocal
-from src.sqldatabase.hub.admin import Admin  # Assuming you have this model in admins.py
+from database.database import Base, SessionLocal
+from src.register_context.domain.entities.admin import Admin  # Assuming you have this model in admins.py
 
 # Helper functions to interact with the database
 def create_admin_in_db(db_session, admin):

@@ -3,9 +3,9 @@ import sys
 from pathlib import Path
 import os
 
-project_root = Path(os.getcwd()).resolve().parent  # Adjust .parent if needed
+project_root = Path(os.getcwd()).resolve().parent.parent  # Adjust .parent if needed
 sys.path.append(str(project_root))
-from src.domain.value_objects.post_code import PostalCode
+from src.search_context.domain.value_objects.postal_code import PostalCode
 
 def test_valid_postal_code():
     """Test creation of a valid postal code."""
