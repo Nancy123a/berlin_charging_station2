@@ -28,4 +28,4 @@ class CSOperatorService:
             # User not found, return failure event
             return CSOperatorNotFoundEvent(username, password, "CSOperator not found")
 
-        return CSOperatorLoginEvent(username, password)
+        return CSOperatorLoginEvent(existing_csoperator.cs_operator_id,username, password)

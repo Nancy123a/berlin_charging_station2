@@ -2,7 +2,8 @@
 from datetime import datetime
 
 class CSOperatorLoginEvent:
-    def __init__(self, username: str, password:str, success: bool = True):
+    def __init__(self, cs_operator_id,username: str, password:str, success: bool = True):
+        self.cs_operator_id=cs_operator_id
         self.username = username
         self.password=password
         self.success = success
@@ -13,6 +14,7 @@ class CSOperatorLoginEvent:
 
     def as_dict(self):
         return {
+            "cs_operator_id":self.cs_operator_id,
             "username": self.username,
             "password":self.password,
             "success": self.success,

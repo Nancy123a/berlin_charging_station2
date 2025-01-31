@@ -2,7 +2,8 @@
 from datetime import datetime
 
 class AdminLoginEvent:
-    def __init__(self, username: str, password:str, success: bool = True):
+    def __init__(self, sys_admin_id,username: str, password:str, success: bool = True):
+        self.sys_admin_id=sys_admin_id
         self.username = username
         self.password=password
         self.success = success
@@ -13,6 +14,7 @@ class AdminLoginEvent:
 
     def as_dict(self):
         return {
+            "sys_admin_id":self.sys_admin_id,
             "username": self.username,
             "password":self.password,
             "success": self.success,

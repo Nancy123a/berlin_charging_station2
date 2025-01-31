@@ -29,4 +29,4 @@ class UserService:
             # User not found, return failure event
             return UserNotFoundEvent(username, password, "User not found")
 
-        return UserLoginEvent(username=username, password=password)
+        return UserLoginEvent(existing_user.user_id,username=username, password=password)

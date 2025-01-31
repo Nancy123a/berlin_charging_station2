@@ -22,10 +22,10 @@ class AdminService:
 
         return AdminCreatedEvent(new_admin.sys_admin_id, new_admin.username,new_admin.password)
 
-    def login_admin(self,username:str,password:str) -> AdminLoginEvent:
-        existing_admin=self.admin_repository.signin_admin(password,username)
-        if existing_admin:
-            # User already exists, no need to create, return failure event
-            return AdminNotFoundEvent(username,password, "Admin already exists")
+    def login_admin(self, username: str, password: str) -> AdminLoginEvent:
+        existing_admin = self.admin_repository.signin_admin(username, password)
+        if not existing_admin:
+            # User not found, return failure event
+            return AdminNotFoundEvent(username, password, "CSOperator not found")
 
-        return AdminLoginEvent(username,password)
+        return AdminLoginEvent(existing_admin.sys_admin_id,username, password)

@@ -17,16 +17,24 @@ def main():
         # Initialize session state
         st.session_state.logged_in = False
         st.session_state.role = None  # Add role to session state
-        
+    
+    #sidebar_placeholder = st.sidebar.empty()  # This will clear the sidebar when needed
+
     if st.session_state.logged_in:
         after_registration(st.session_state.role)
     else:
         register.inspect_and_create_tables()
-        role= register.register_login()
-        if not role==None:
+        
+        role, userid = register.register_login()
+
+        if role and userid:  # Ensure that we only update session state when valid role and userid are returned
             st.session_state.logged_in = True
             st.session_state.role = role  # Save role in session state
+            st.session_state.userid = userid  # Save user ID in session state
+            #sidebar_placeholder.empty()
             st.rerun()  # Refresh the app to show the new state
+
+
 
 
 def after_registration(role):
@@ -51,8 +59,14 @@ def after_registration(role):
     gdf_residents2 = m1.preprop_resid(df_residents, df_geodat_plz, pdict)
 
     # Generate the Streamlit visualization
-    m1.make_streamlit_electric_Charging_resid(df_lstat,gdf_lstat3, gdf_residents2,role)
+    to_register=m1.make_streamlit_electric_Charging_resid(df_lstat,gdf_lstat3, gdf_residents2,role)
+    if to_register=="logout":
+        open_registration_form()
 
+def open_registration_form():
+    st.session_state.logged_in = False
+    st.session_state.role = None  # Add role to session state
+    register.register_login()
 
 if __name__ == '__main__':
     main()
