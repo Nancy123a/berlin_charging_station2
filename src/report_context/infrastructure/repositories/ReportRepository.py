@@ -9,11 +9,11 @@ class ReportRepository:
         """Initialize the repository with a SQLAlchemy session."""
         self.session = session or SessionLocal()
   
-  def create_report(self, report: Report) -> Report:
+  def create_report(self, report: Report) -> bool:
       """Create a new report in the database."""
       self.session.add(report)
       self.session.commit()
-      return report
+      return True
       
   def find_reports_by_station_id(self, station_id: int) -> List[Report]:
       """Find reports by a station ID."""

@@ -45,6 +45,11 @@ from src.report_context.infrastructure.repositories.NotificationRepository impor
 from src.register_context.application.services.UserService import UserService
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
 from src.search_context.domain.events.StationNotFoundEvent import StationNotFoundEvent
+from src.report_context.domain.aggregate.ReportAggregateService import ReportAggregateService
+from src.report_context.domain.events.ReportAlreadyExistsEvent import ReportAlreadyExistsEvent
+from src.report_context.domain.events.ReportCreateFailedEvent import ReportCreateFailedEvent
+from src.report_context.domain.events.ReportCreateEvent import ReportCreateEvent
+from src.report_context.domain.events.ReportUpdateEvent import ReportUpdateEvent
 
 def sort_by_plz_add_geometry(dfr, dfg, pdict): 
     dframe                  = dfr.copy()
@@ -185,6 +190,11 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
     # USER REPOSITORY & SERVICE
     user_repository = UserRepository(SessionLocal())
     user_service = UserService(user_repository)
+    
+    # REPORT AGGREGATE REPOSITORY & SERVICE
+    report_aggregate_service = ReportAggregateService(user_repository=user_repository, notification_repository=notification_repository, admin_repository=admin_repository, chargingstation_repository=chargingstation_repository,
+    report_repository=report_repository,
+    csoperator_repository=csoperator_repository)
 
     if choice=="Logout":
         return "logout"
@@ -307,40 +317,19 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
                     st.error("Please select Type")
                 elif not station_id:
                     st.error("Please select Station")
-                else:                    
-                    # Get the first admin with less than 10 reports assigned
-                    all_admins = admin_service.get_all_admins().admins
-                    admin = None
-                    for admin in all_admins:
-                        if(admin.number_reports_assigned < 10):
-                            admin = admin
-                            break
-                    # If no admin with less than 10 reports is found, get the first admin
-                    if not admin:
-                        admin = all_admins[0]
+                else:           
+                    report = Report(station_id=station_id, description=description, severity=severity, type=type, user_id=user_id)         
+                    result = report_aggregate_service.report_malfunction(report)
                     
-                    # Create the report
-                    report = Report(station_id=station_id, description=description, severity=severity, type=type, user_id=user_id, admin_id=admin.sys_admin_id)
-                    report_service.create_report(report)
-                    
-                    # Update the number of reports assigned to the admin
-                    admin.number_reports_assigned += 1
-                    admin_service.update_admin(admin)
-                    
-                    # TODO: Change status of station
-                    chargingstation_service.update_charging_station(station_id, "out_of_service")
-                    
-                    # TODO: Send notification to users
-                    all_users = user_service.get_all_users().users
-                    notification_service.create_notifications([user.user_id for user in all_users], f"""<h5>MALFUNCTION HAS BEEN REPORTED FOR STATION ID: {station_id}</h5>
-                        <ul>
-                            <li>Street: {report.chargingstation.street}</li>
-                            <li>Postal Code: {report.chargingstation.postal_code}</li>
-                            <li>District: {report.chargingstation.district}</li>
-                        </ul>
-                        <strong>Please check nearby charging stations for alternative options while this issue is addressed. Thank you for your cooperation.</strong>""")
-                    
-                    st.success("Malfunction issue report successfully forwarded")
+                    if isinstance(result, ReportAlreadyExistsEvent):
+                        st.error(result.reason)
+                    elif isinstance(result, ReportCreateFailedEvent):
+                        st.error(result.reason)
+                    elif isinstance(result, ReportCreateEvent):
+                        st.success("Malfunction issue report successfully forwarded")
+                        
+                        time.sleep(2)
+                        st.rerun()
             
         except (TypeError, ValueError) as e:
             st.error(e)
@@ -382,34 +371,15 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
         forward_button = st.button("Forward", disabled=not report)
         
         if forward_button:
-            try: 
-                # Get all charging station operators
-                all_csoperators = csoperator_service.get_all_csoperators().csoperators
-                cs_operator = None
-                # Get the first operator with less than 10 reports assigned
-                for operator in all_csoperators:
-                    if(operator.number_reports_assigned < 10):
-                        cs_operator = operator
-                        break
-                # If no operator with less than 10 reports is found, get the first operator
-                if not cs_operator:
-                    cs_operator = all_csoperators[0]
-                
-                # Update the report
-                report.csoperator = cs_operator
-                report.status = "managed"
-                report_service.update_report(report)
-                
-                # Update the charging station operator
-                cs_operator.number_reports_assigned += 1
-                csoperator_repository.update_csoperator(cs_operator)
-                
+            result = report_aggregate_service.forward_report_malfunction(report)
+            
+            if isinstance(result, ValueError):
+                st.error(result)
+            elif isinstance(result, ReportUpdateEvent) and result.success:
                 st.success("Malfunction issue report successfully forwarded")
                 
                 time.sleep(2)
                 st.rerun()
-            except (TypeError, ValueError) as e:
-                st.error(e)
 
     elif choice == "Resolve Malfunction Report":
         st.title("Resolve Malfunction Report")
@@ -455,40 +425,15 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
         resolve_button = st.button("Resolve", disabled=not selected_report)
         
         if resolve_button:
-            try: 
-                # Update the admin
-                admin = selected_report.admin
-                admin.number_reports_assigned -= 1
-                admin_repository.update_admin(admin)
-                
-                # Update the charging station operator
-                cs_operator = selected_report.csoperator
-                cs_operator.number_reports_assigned -= 1
-                csoperator_repository.update_csoperator(cs_operator)
-                
-                # TODO: Change status of station
-                chargingstation_service.update_charging_station(report.station_id, "available")
-                
-                # TODO: Send notification to users
-                all_users = user_service.get_all_users().users
-                notification_service.create_notifications([user.user_id for user in all_users], f"""<h5>ISSUE RESOLVED FOR STATION ID: {selected_report.station_id}</h5>
-                    <ul>
-                        <li>Street: {selected_report.chargingstation.street}</li>
-                        <li>Postal Code: {selected_report.chargingstation.postal_code}</li>
-                        <li>District: {selected_report.chargingstation.district}</li>
-                    </ul>
-                    <strong>The reported malfunction has been resolved, and the charging station is now fully operational. Thank you for your patience and cooperation..</strong>""")
-                
-                # Update the report
-                report.status = "resolved"
-                report_service.update_report(report)
-                
+            result = report_aggregate_service.resolve_report_malfunction(selected_report)
+            
+            if isinstance(result, ValueError):
+                st.error(result)
+            elif isinstance(result, ReportUpdateEvent) and result.success:
                 st.success("Malfunction issue report successfully resolved")
                 
                 time.sleep(2)
                 st.rerun()
-            except (TypeError, ValueError) as e:
-                st.error(e)
                 
     elif choice == "Notifications":
         st.title('Notifications')

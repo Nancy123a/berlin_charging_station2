@@ -18,12 +18,10 @@ class ReportService:
       
       for exisiting_report in exisiting_reports:
           if exisiting_report is not None and exisiting_report.status != "resolved":
-            # Report already exists and is not resolved, return failure event
             return ReportAlreadyExistsEvent(exisiting_report, "Malfunction report has already been forwarded for this station")
-            # raise ValueError("Malfunction report has already been forwarded for this station")
-      
-      created_report = self.report_repository.create_report(report)
-      return ReportCreateEvent(created_report)
+        
+      success = self.report_repository.create_report(report)
+      return ReportCreateEvent(success)
 
   def get_reports_by_admin_id(self, admin_id: int) -> GetAdminReportsEvent:
       """Find reports by an admin ID."""
