@@ -5,15 +5,15 @@ from pathlib import Path
 import os
 from sqlalchemy.exc import IntegrityError  # Import for handling constraint violation error
 
-project_root = Path(os.getcwd()).resolve().parent  
+project_root = Path(os.getcwd()).resolve().parent.parent
 sys.path.append(str(project_root))
 import folium
 from unittest.mock import patch
-from src.sqldatabase.hub.chargingstation import ChargingStation
+from src.search_context.domain.entities.chargingstation import ChargingStation
 from folium import Marker
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.sqldatabase.database import Base, SessionLocal,engine
+from database.database import Base, SessionLocal,engine
 from folium.plugins import MarkerCluster
 
 @pytest.fixture
@@ -40,14 +40,14 @@ def test_charging_stations_data_display(db_session):
     """Test that when a valid postal code is entered, the map displays the correct markers for charging stations."""
     # Create some test charging stations in multiple postal codes
     charging_station_1 = ChargingStation(
-        station_id="CS005", postal_code="10001", latitude="40.7128", longitude="-74.0060", location="New York, USA",
+        station_id=123, postal_code="10001", latitude=40.7128, longitude=-74.0060, location="New York, USA",
         street="5th Avenue", district="Manhattan", federal_state="NY", operator="NYC Charging", 
-        power_charging_dev=50, commission_date="01.01.2021", type_charging_device="Fast", cs_status="Active"
+        power_charging_dev=50, commission_date=datetime.strptime("11.10.2020", "%d.%m.%Y").date(), type_charging_device="Fast", cs_status="Active"
     )
     charging_station_2 = ChargingStation(
-        station_id="CS006", postal_code="10001", latitude="40.730610", longitude="-73.935242", location="New York, USA",
+        station_id=126, postal_code="10001", latitude=40.730610, longitude=-73.935242, location="New York, USA",
         street="Broadway", district="Manhattan", federal_state="NY", operator="NYC Charging", 
-        power_charging_dev=100, commission_date="01.01.2021", type_charging_device="Fast", cs_status="Active"
+        power_charging_dev=100, commission_date=datetime.strptime("11.10.2020", "%d.%m.%Y").date(), type_charging_device="Fast", cs_status="Active"
     )
     db_session.add(charging_station_1)
     db_session.add(charging_station_2)
@@ -71,9 +71,9 @@ def test_charging_stations_data_display(db_session):
 def test_color_categorization_for_power(db_session):
     """Test that charging stations are color-coded correctly based on power rating."""
     # Create different charging stations with varying power
-    station_low_power = ChargingStation(station_id="CS007", power_charging_dev=30, cs_status="Active", latitude="40.7128", longitude="-74.0060")
-    station_medium_power = ChargingStation(station_id="CS008", power_charging_dev=120, cs_status="Active", latitude="40.730610", longitude="-73.935242")
-    station_high_power = ChargingStation(station_id="CS009", power_charging_dev=200, cs_status="Active", latitude="40.748817", longitude="-73.985428")
+    station_low_power = ChargingStation(station_id=123, power_charging_dev=30, cs_status="Active", latitude=40.7128, longitude=-74.0060)
+    station_medium_power = ChargingStation(station_id=124, power_charging_dev=120, cs_status="Active", latitude=40.730610, longitude=-73.935242)
+    station_high_power = ChargingStation(station_id=125, power_charging_dev=200, cs_status="Active", latitude=40.748817, longitude=-73.985428)
 
     db_session.add(station_low_power)
     db_session.add(station_medium_power)
@@ -107,7 +107,7 @@ def test_color_categorization_for_power(db_session):
 # Test 3: Test Map Zoom Behavior
 def test_map_zoom_behavior(db_session):
     """Test that the map zooms to the correct region based on postal code."""
-    station_1 = ChargingStation(station_id="CS010", postal_code="20001", latitude="38.8954", longitude="-77.0365")
+    station_1 = ChargingStation(station_id=123, postal_code="20001", latitude=38.8954, longitude=-77.0365)
     db_session.add(station_1)
     db_session.commit()
 
@@ -122,7 +122,7 @@ def test_map_zoom_behavior(db_session):
 # Test 4: Test the Handling of Empty or Null Data
 def test_empty_or_null_data_handling(db_session):
     """Test that the app handles missing or null data gracefully."""
-    station_null_power = ChargingStation(station_id="CS011", power_charging_dev=None)
+    station_null_power = ChargingStation(station_id=123, power_charging_dev=None)
     db_session.add(station_null_power)
     db_session.commit()
     

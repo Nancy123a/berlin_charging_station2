@@ -4,13 +4,13 @@ from pathlib import Path
 import os
 from sqlalchemy.exc import IntegrityError  # For handling constraint violation error
 
-project_root = Path(os.getcwd()).resolve().parent  # Adjust .parent if needed
+project_root = Path(os.getcwd()).resolve().parent.parent  # Adjust .parent if needed
 sys.path.append(str(project_root))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.sqldatabase.database import Base, SessionLocal
-from src.sqldatabase.hub.csoperator import CSOperator  # Assuming you have this model in csoperator.py
+from database.database import Base, SessionLocal
+from src.register_context.domain.entities.csoperator import CSOperator  # Assuming you have this model in csoperator.py
 
 # Helper functions to interact with the database
 def create_cs_operator_in_db(db_session, operator):

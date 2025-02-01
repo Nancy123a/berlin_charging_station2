@@ -3,9 +3,9 @@ import sys
 from pathlib import Path
 import os
 
-project_root = Path(os.getcwd()).resolve().parent  # Adjust .parent if needed
+project_root = Path(os.getcwd()).resolve().parent.parent  # Adjust .parent if needed
 sys.path.append(str(project_root))
-from src.domain.value_objects.password import Password  # Adjust this import to your actual file structure
+from src.register_context.domain.value_objects.password import Password  # Adjust this import to your actual file structure
 
 def test_valid_password():
     """Test valid password creation."""
