@@ -50,7 +50,7 @@ class ChargingStationService:
             return event
 
         # Return the found ChargingStation aggregates
-        return charging_stations
+        return StationFoundEvent(charging_stations)
 
     def is_table_empty(self) -> bool:
         return self.chargingstation_repository.is_table_empty()
