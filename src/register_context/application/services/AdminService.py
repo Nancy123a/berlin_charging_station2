@@ -5,6 +5,8 @@ from src.register_context.domain.events.AdminLoginEvent import AdminLoginEvent
 from src.register_context.domain.events.AdminNotFoundEvent import AdminNotFoundEvent
 from src.register_context.infrastructure.repositories.AdminRepository import AdminRepository
 from src.register_context.domain.value_objects.password import Password
+from src.register_context.domain.events.GetAllAdminsEvent import GetAllAdminsEvent
+from src.register_context.domain.events.UpdateAdminEvent import UpdateAdminEvent
 
 class AdminService:
     def __init__(self, admin_repository: AdminRepository):
@@ -23,20 +25,21 @@ class AdminService:
 
         return AdminCreatedEvent(new_admin.sys_admin_id, new_admin.username,new_admin.password)
 
-    def login_admin(self, username: str, password: str) -> AdminLoginEvent:
+    def login_admin(self, username: str, password: str) -> AdminLoginEvent | AdminNotFoundEvent:
         existing_admin = self.admin_repository.signin_admin(username, password)
         if not existing_admin:
             # User not found, return failure event
             return AdminNotFoundEvent(username, password, "CSOperator not found")
 
-        return AdminLoginEvent(username,password)
-    
-    def get_all_admins(self):
-        return self.admin_repository.get_all_admins()
-    
-    def update_admin(self, admin: Admin):
-        self.admin_repository.update_admin(admin)
         return AdminLoginEvent(existing_admin.sys_admin_id,username, password)
 
     def verify_password(self,password:str):
         return Password(password)
+    
+    def get_all_admins(self) -> GetAllAdminsEvent:
+        all_admins = self.admin_repository.get_all_admins()
+        return GetAllAdminsEvent(all_admins)
+    
+    def update_admin(self, admin: Admin) -> UpdateAdminEvent:
+        updated_admin = self.admin_repository.update_admin(admin)
+        return UpdateAdminEvent(updated_admin.sys_admin_id, updated_admin.username, updated_admin.password)

@@ -4,6 +4,7 @@ from src.search_context.infrastructure.repositories.ChargingStationRepository im
 from src.search_context.domain.events.StationNotFoundEvent import StationNotFoundEvent
 from src.search_context.domain.value_objects.postal_code import PostalCode
 from typing import List, Union
+from src.search_context.domain.events.StationUpdateEvent import StationUpdateEvent
 
 class ChargingStationService:
     def __init__(self, station_repository: ChargingStationRepository):
@@ -45,3 +46,7 @@ class ChargingStationService:
 
     def is_table_empty(self) -> bool:
         return self.chargingstation_repository.is_table_empty()
+    
+    def update_charging_station(self, id: int, status: str) -> StationUpdateEvent:
+        success = self.chargingstation_repository.update_charging_station(id, status)
+        return StationUpdateEvent(id, status, success)

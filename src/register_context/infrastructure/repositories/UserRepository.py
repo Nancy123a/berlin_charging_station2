@@ -2,6 +2,7 @@
 from src.register_context.domain.entities.users import User
 from src.register_context.domain.value_objects import Password
 from sqlalchemy.orm import Session
+from typing import List
 
 class UserRepository:
     def __init__(self, session: Session):
@@ -16,3 +17,6 @@ class UserRepository:
 
     def signin_user(self, username: str, password: str) -> bool:
         return self.session.query(User).filter_by(username=username,password=password).first()
+    
+    def get_all_users(self) -> List[User]:
+        return self.session.query(User).all()

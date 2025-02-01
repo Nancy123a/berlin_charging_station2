@@ -16,7 +16,7 @@ class StationFoundEvent:
         self.type_charging_device = charging_station.type_charging_device
         self.cs_status = charging_station.cs_status
         self.success = success
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now()
 
     def __repr__(self):
         return f"<StationFoundEvent(station_id={self.station_id}, postal_code={self.postal_code}, location={self.location}, success={self.success})>"

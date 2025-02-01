@@ -20,6 +20,7 @@ class CSOperatorRepository:
     def get_all_csoperators(self):
         return self.session.query(CSOperator).all()
     
-    def update_csoperator(self, csoperator: CSOperator):
-        self.session.merge(csoperator)
+    def update_csoperator(self, csoperator: CSOperator) -> CSOperator:
+        updated_operator = self.session.merge(csoperator)
         self.session.commit()
+        return updated_operator

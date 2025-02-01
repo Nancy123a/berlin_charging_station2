@@ -38,6 +38,11 @@ from src.register_context.domain.entities.csoperator import CSOperator
 from src.register_context.domain.entities.admin import Admin
 from folium import Popup, Marker
 from core import register_methods as register
+from src.report_context.application.services.NotificationService import NotificationService
+from src.report_context.infrastructure.repositories.NotificationRepository import NotificationRepository
+from src.register_context.application.services.UserService import UserService
+from src.register_context.infrastructure.repositories.UserRepository import UserRepository
+from src.search_context.domain.events.StationNotFoundEvent import StationNotFoundEvent
 
 def sort_by_plz_add_geometry(dfr, dfg, pdict): 
     dframe                  = dfr.copy()
@@ -142,18 +147,42 @@ def get_power_category_and_color(power):
 # -----------------------------------------------------------------------------
 
 @ht.timer
-def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
+def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
     """Makes Streamlit App with Heatmap of Electric Charging Stations and Residents"""
     inspect_db(df)
 
     # Define menu options based on role
     menu = {
         "user": ["Search Station", "Report Malfunction", "Notifications","Logout"],
-        "admin": ["Search Station", "Manage Malfunction Report", "Notifications","Logout"],
+        "admin": ["Search Station", "Manage Malfunction Report", "Logout"],
         "csoperator": ["Search Station", "Resolve Malfunction Report","Logout"]
     }
     
     choice = st.sidebar.selectbox("Select Option", menu.get(role, []))
+    
+    # REPORT REPOSITORY & SERVICE
+    report_repository = ReportRepository(SessionLocal())
+    report_service = ReportService(report_repository)
+    
+    # ADMIN REPOSITORY & SERVICE
+    admin_repository = AdminRepository(SessionLocal())
+    admin_service = AdminService(admin_repository)
+    
+    # CHARGING STATION REPOSITORY & SERVICE
+    chargingstation_repository = ChargingStationRepository(SessionLocal())
+    chargingstation_service = ChargingStationService(chargingstation_repository)
+    
+    # CHARGING STATION OPERATOR REPOSITORY & SERVICE
+    csoperator_repository = CSOperatorRepository(SessionLocal())
+    csoperator_service = CSOperatorService(csoperator_repository)
+    
+    # NOTIFICATION REPOSITORY & SERVICE
+    notification_repository = NotificationRepository(SessionLocal())
+    notification_service = NotificationService(notification_repository)
+    
+    # USER REPOSITORY & SERVICE
+    user_repository = UserRepository(SessionLocal())
+    user_service = UserService(user_repository)
 
     if choice=="Logout":
         return "logout"
@@ -200,8 +229,6 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         if search_button:
             try:
                 session = SessionLocal()
-                chargingstation_repository = ChargingStationRepository(SessionLocal())
-                chargingstation_service = ChargingStationService(chargingstation_repository)
                 chargingstation_service.verify_postal_code(search_query)
                 charging_stations = chargingstation_service.find_stations_by_postal_code(search_query)
 
@@ -247,7 +274,9 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         
         description = st.text_area("Description")
         severity, severity_label = st.selectbox("Select Severity", [("low", "Low"), ("medium", "Medium"), ("high", "High")], format_func=lambda x: x[1])
+        type, type_label = st.selectbox("Select Type", [("hardware", "Hardware"), ("software", "Software"), ("connectivity", "Connectivity")], format_func=lambda x: x[1])
         postal_code = st.text_input("Postal Code")
+        
         
         
         try:
@@ -256,7 +285,11 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
                 
                 searched_stations = chargingstation_service.find_stations_by_postal_code(postal_code)
                 
-                station_id, station_id_label  = st.selectbox("Select Station", [(station.charging_station.station_id, 'Station ID: ' + str(station.charging_station.station_id) + ' | Street: ' + station.charging_station.street) for station in searched_stations], format_func=lambda x: x[1])
+                if isinstance(searched_stations, StationNotFoundEvent) and searched_stations.success:
+                    st.error("No data found for the entered Postal Code (PLZ).")
+                    station_id = None
+                else:
+                    station_id, station_id_label  = st.selectbox("Select Station", [(station.charging_station.station_id, 'Station ID: ' + str(station.charging_station.station_id) + ' | Street: ' + station.charging_station.street) for station in searched_stations], format_func=lambda x: x[1])
             
             else:
                 station_id = None
@@ -268,11 +301,13 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
                     st.error("Please fill Description")
                 elif not severity:
                     st.error("Please select Severity")
+                elif not type:
+                    st.error("Please select Type")
                 elif not station_id:
                     st.error("Please select Station")
                 else:                    
                     # Get the first admin with less than 10 reports assigned
-                    all_admins = admin_service.get_all_admins()
+                    all_admins = admin_service.get_all_admins().admins
                     admin = None
                     for admin in all_admins:
                         if(admin.number_reports_assigned < 10):
@@ -283,12 +318,25 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
                         admin = all_admins[0]
                     
                     # Create the report
-                    report = Report(station_id=station_id, description=description, severity=severity, user_id=1, admin_id=admin.sys_admin_id)
+                    report = Report(station_id=station_id, description=description, severity=severity, type=type, user_id=user_id, admin_id=admin.sys_admin_id)
                     report_service.create_report(report)
                     
                     # Update the number of reports assigned to the admin
                     admin.number_reports_assigned += 1
                     admin_service.update_admin(admin)
+                    
+                    # TODO: Change status of station
+                    chargingstation_service.update_charging_station(station_id, "out_of_service")
+                    
+                    # TODO: Send notification to users
+                    all_users = user_service.get_all_users().users
+                    notification_service.create_notifications([user.user_id for user in all_users], f"""<h5>MALFUNCTION HAS BEEN REPORTED FOR STATION ID: {station_id}</h5>
+                        <ul>
+                            <li>Street: {report.chargingstation.street}</li>
+                            <li>Postal Code: {report.chargingstation.postal_code}</li>
+                            <li>District: {report.chargingstation.district}</li>
+                        </ul>
+                        <strong>Please check nearby charging stations for alternative options while this issue is addressed. Thank you for your cooperation.</strong>""")
                     
                     st.success("Malfunction issue report successfully forwarded")
             
@@ -299,7 +347,11 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         st.title('Manage Malfunction Report')
         
         # Get all reports for logged in admin
-        all_reports = report_service.get_reports_by_admin_id(1)
+        all_reports = report_service.get_reports_by_admin_id(user_id).reports
+        
+        if not all_reports:
+            st.text("No reports found for the logged in admin.")
+            return
         
         report_data = [{
             "Report ID": report.report_id,
@@ -325,12 +377,12 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         
         report = st.selectbox("Forward Report to Charging Station Operator", reports_to_be_forwarded, format_func=lambda x: "REPORT ID: " + str(x.report_id) + " | Station ID: " + str(x.station_id))
         
-        forward_button = st.button("Forward")
+        forward_button = st.button("Forward", disabled=not report)
         
         if forward_button:
             try: 
                 # Get all charging station operators
-                all_csoperators = csoperator_service.get_all_csoperators()
+                all_csoperators = csoperator_service.get_all_csoperators().csoperators
                 cs_operator = None
                 # Get the first operator with less than 10 reports assigned
                 for operator in all_csoperators:
@@ -361,7 +413,11 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         st.title("Resolve Malfunction Report")
         
         # Get all reports for logged in charging station operator
-        all_reports = report_service.get_reports_by_csoperator_id(1)
+        all_reports = report_service.get_reports_by_csoperator_id(user_id).reports
+        
+        if not all_reports:
+            st.text("No reports found for the logged in charging station operator.")
+            return
         
         report_data = [{
             "Report ID": report.report_id,
@@ -384,19 +440,17 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
         
         reports_to_be_resolved = [report for report in all_reports if report.status == "managed"]
         
-        
-        
         report = st.selectbox("Mark as Resolved", reports_to_be_resolved, format_func=lambda x: "REPORT ID: " + str(x.report_id) + " | Station ID: " + str(x.station_id))
         
         # all_reports find report.id
         selected_report = None
         
         for rep in all_reports:
-            if rep.report_id == report.report_id:
+            if report and rep.report_id == report.report_id:
                 selected_report = rep
                 break
             
-        resolve_button = st.button("Resolve", key=report.report_id)
+        resolve_button = st.button("Resolve", disabled=not selected_report)
         
         if resolve_button:
             try: 
@@ -410,6 +464,19 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
                 cs_operator.number_reports_assigned -= 1
                 csoperator_repository.update_csoperator(cs_operator)
                 
+                # TODO: Change status of station
+                chargingstation_service.update_charging_station(report.station_id, "available")
+                
+                # TODO: Send notification to users
+                all_users = user_service.get_all_users().users
+                notification_service.create_notifications([user.user_id for user in all_users], f"""<h5>ISSUE RESOLVED FOR STATION ID: {selected_report.station_id}</h5>
+                    <ul>
+                        <li>Street: {selected_report.chargingstation.street}</li>
+                        <li>Postal Code: {selected_report.chargingstation.postal_code}</li>
+                        <li>District: {selected_report.chargingstation.district}</li>
+                    </ul>
+                    <strong>The reported malfunction has been resolved, and the charging station is now fully operational. Thank you for your patience and cooperation..</strong>""")
+                
                 # Update the report
                 report.status = "resolved"
                 report_service.update_report(report)
@@ -420,6 +487,22 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role):
                 st.rerun()
             except (TypeError, ValueError) as e:
                 st.error(e)
-
+                
+    elif choice == "Notifications":
+        st.title('Notifications')
+        
+        # Get all notifications for logged in user
+        all_notifications = notification_service.get_notifications_by_user_id(user_id).notifications
+        
+        if not all_notifications:
+            st.text("No notifications found for the logged in user.")
+            return
+        
+        all_notifications = sorted(all_notifications, key=lambda x: x.created_at, reverse=True)
+        
+        for notification in all_notifications:
+            st.write("Created At: ", notification.created_at)
+            st.write(notification.content, unsafe_allow_html=True)
+            st.html("<hr/>")
         
     return role

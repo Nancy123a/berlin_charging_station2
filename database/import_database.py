@@ -65,7 +65,7 @@ def import_charging_stations_from_csv(df):
             power_charging_dev=row["power_charging_dev"],  # ✅ Converted to float
             type_charging_device=row["type_charging_device"],
             commission_date=row["commission_date"],  # ✅ Converted to date
-            cs_status="Available"
+            cs_status="available"
         )
         charging_stations.append(charging_station)
 

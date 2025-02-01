@@ -10,6 +10,7 @@ class Report(Base):
     status = Column(Enum('pending', 'managed', 'resolved'), nullable=False, default='pending')
     description = Column(String, nullable=False)
     severity = Column(Enum('low', 'medium', 'high'), nullable=False, default='low')
+    type = Column(Enum('hardware', 'software', 'connectivity'), nullable=False, default='hardware')
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     
@@ -22,5 +23,3 @@ class Report(Base):
     admin = relationship("Admin", back_populates="reports")
     csoperator = relationship("CSOperator", back_populates="reports")
     chargingstation = relationship("ChargingStation", back_populates="reports")
-    
-    

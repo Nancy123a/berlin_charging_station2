@@ -7,7 +7,7 @@ class UserCreatedEvent:
         self.username = username
         self.password=password
         self.success = success
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now()
 
     def __repr__(self):
         return f"<UserCreatedEvent(user_id={self.user_id}, username={self.username}, password={self.password}, success={self.success})>"
