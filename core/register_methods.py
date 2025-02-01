@@ -20,6 +20,7 @@ from database.database import SessionLocal, engine, Base
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
 from src.register_context.application.services.UserService import UserService
 from src.register_context.domain.events.UserLoginEvent import UserLoginEvent
+from src.register_context.domain.events.UserNotFoundEvent import UserNotFoundEvent
 from src.register_context.domain.events.UserCreatedEvent import UserCreatedEvent
 from src.register_context.domain.events.UserAlreadyExistEvent import UserAlreadyExistEvent
 from src.register_context.domain.entities.users import User
@@ -27,6 +28,7 @@ from src.register_context.domain.entities.users import User
 from src.register_context.infrastructure.repositories.AdminRepository import AdminRepository
 from src.register_context.application.services.AdminService import AdminService
 from src.register_context.domain.events.AdminCreatedEvent import AdminCreatedEvent
+from src.register_context.domain.events.AdminNotFoundEvent import AdminNotFoundEvent
 from src.register_context.domain.events.AdminLoginEvent import AdminLoginEvent
 from src.register_context.domain.events.AdminAlreadyExistEvent import AdminAlreadyExistEvent
 from src.register_context.domain.entities.admin import Admin
@@ -36,6 +38,7 @@ from src.register_context.application.services.CSOperatorService import CSOperat
 from src.register_context.domain.events.CSOperatorLoginEvent import CSOperatorLoginEvent
 from src.register_context.domain.events.CSOperatorCreatedEvent import CSOperatorCreatedEvent
 from src.register_context.domain.events.CSOperatorAlreadyExistEvent import CSOperatorAlreadyExistEvent
+from src.register_context.domain.events.CSOperatorNotFoundEvent import CSOperatorNotFoundEvent
 from src.register_context.domain.entities.csoperator import CSOperator
 
 from src.search_context.domain.entities.chargingstation import ChargingStation
@@ -73,7 +76,7 @@ def register_login():
                 service_class = {"user": UserService, "admin": AdminService, "csoperator": CSOperatorService}[role]
                 login_method = {"user": "login_user", "admin": "login_admin", "csoperator": "login_csoperator"}[role]
                 event_class = {"user": UserLoginEvent, "admin": AdminLoginEvent, "csoperator": CSOperatorLoginEvent}[role]
-                not_found_class = {"user": UserAlreadyExistEvent, "admin": AdminAlreadyExistEvent, "csoperator": CSOperatorAlreadyExistEvent}[role]
+                not_found_class = {"user": UserNotFoundEvent, "admin": AdminNotFoundEvent, "csoperator": CSOperatorNotFoundEvent}[role]
                 
                 repository = repository_class(SessionLocal())
                 service = service_class(repository)

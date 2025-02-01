@@ -1,6 +1,7 @@
 # domain/services/user_service.py
 from src.register_context.domain.entities.users import User
 from src.register_context.domain.events.UserAlreadyExistEvent import UserAlreadyExistEvent
+from src.register_context.domain.events.UserNotFoundEvent import UserNotFoundEvent
 from src.register_context.domain.events.UserLoginEvent import UserLoginEvent
 from src.register_context.domain.events.UserCreatedEvent import UserCreatedEvent
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
@@ -40,7 +41,7 @@ class UserService:
         existing_user = self.user_repository.signin_user(username, password)
         if not existing_user:
             # User not found, return failure event
-            return UserAlreadyExistEvent(username, password, "User already exist")
+            return UserNotFoundEvent(username, password, "User not found")
 
         return UserLoginEvent(existing_user.user_id,username=username, password=password)
     

@@ -20,7 +20,7 @@ class UserRepository:
         self.session.add(user)
         self.session.commit()
 
-    def signin_user(self, username: str, password: str) -> bool:
+    def signin_user(self, username: str, password: str) -> User:
         return self.session.query(User).filter_by(username=username,password=password).first()
     
     def get_all_users(self) -> List[User]:

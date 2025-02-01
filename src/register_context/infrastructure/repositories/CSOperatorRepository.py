@@ -18,7 +18,7 @@ class CSOperatorRepository:
         self.session.add(csoperator)
         self.session.commit()
 
-    def signin_csoperator(self, username: str, password: str) -> bool:
+    def signin_csoperator(self, username: str, password: str) -> CSOperator:
         return self.session.query(CSOperator).filter_by(username=username,password=password).first()
     
     def get_all_csoperators(self):

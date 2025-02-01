@@ -19,7 +19,7 @@ class AdminRepository:
         self.session.add(admin)
         self.session.commit()
 
-    def signin_admin(self, username: str, password: Password) -> bool:
+    def signin_admin(self, username: str, password: Password) -> Admin:
         return self.session.query(Admin).filter_by(username=username,password=password).first()
     
     def get_all_admins(self) -> List[Admin]:
