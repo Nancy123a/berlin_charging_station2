@@ -1,6 +1,7 @@
 # repository/user_repository.py
 from src.register_context.domain.entities.csoperator import CSOperator
 from src.register_context.domain.value_objects import Password
+from src.register_context.domain.events.CSOperatorAlreadyExistEvent import CSOperatorAlreadyExistEvent
 from sqlalchemy.orm import Session
 
 class CSOperatorRepository:
@@ -8,7 +9,10 @@ class CSOperatorRepository:
         self.session = session
 
     def get_csoperator_by_username(self, username: str) -> CSOperator:
-        return self.session.query(CSOperator).filter(CSOperator.username == username).first()
+        csoperator=self.session.query(CSOperator).filter(CSOperator.username == username).first()
+        if csoperator:
+            return CSOperatorAlreadyExistEvent(csoperator.username,csoperator.password,"CSOperator already exist")
+        return csoperator
 
     def add_csoperator(self, csoperator: CSOperator):
         self.session.add(csoperator)
