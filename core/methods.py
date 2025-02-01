@@ -45,6 +45,7 @@ from src.report_context.infrastructure.repositories.NotificationRepository impor
 from src.register_context.application.services.UserService import UserService
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
 from src.search_context.domain.events.StationNotFoundEvent import StationNotFoundEvent
+from src.search_context.domain.events.StationFoundEvent import StationFoundEvent
 from src.report_context.domain.aggregate.ReportAggregateService import ReportAggregateService
 from src.report_context.domain.events.ReportAlreadyExistsEvent import ReportAlreadyExistsEvent
 from src.report_context.domain.events.ReportCreateFailedEvent import ReportCreateFailedEvent
@@ -246,8 +247,9 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
                 session = SessionLocal()
                 event=chargingstation_service.verify_postal_code(search_query)
                 if isinstance(event, PostalCodeFoundEvent):
-                    charging_stations = chargingstation_service.find_stations_by_postal_code(event.postal_code)
-                    if charging_stations:
+                    charging_station_event = chargingstation_service.find_stations_by_postal_code(event.postal_code)
+                    if isinstance(charging_station_event, StationFoundEvent):
+                        charging_stations=charging_station_event.stations
                         latitudes, longitudes = [], []
                         for station in charging_stations:
                             latitude = station.charging_station.latitude
