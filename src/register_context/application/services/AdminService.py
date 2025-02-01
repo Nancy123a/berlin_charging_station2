@@ -2,7 +2,7 @@
 from src.register_context.domain.entities.admin import Admin
 from src.register_context.domain.events.AdminCreatedEvent import AdminCreatedEvent
 from src.register_context.domain.events.AdminLoginEvent import AdminLoginEvent
-from src.register_context.domain.events.AdminNotFoundEvent import AdminNotFoundEvent
+from src.register_context.domain.events.AdminAlreadyExistEvent import AdminAlreadyExistEvent
 from src.register_context.infrastructure.repositories.AdminRepository import AdminRepository
 from src.register_context.domain.value_objects.password import Password
 from src.register_context.domain.events.GetAllAdminsEvent import GetAllAdminsEvent
@@ -19,7 +19,7 @@ class AdminService:
         existing_admin = self.admin_repository.get_admin_by_username(username)
         if existing_admin:
             # User already exists, no need to create, return failure event
-            return AdminNotFoundEvent(username,password, "Admin already exists")
+            return AdminAlreadyExistEvent(username,password, "Admin already exists")
 
         # Otherwise, create the user and return success event
         new_admin = Admin(username=username, password=password,number_reports_assigned=0)
@@ -27,11 +27,11 @@ class AdminService:
 
         return AdminCreatedEvent(new_admin.sys_admin_id, new_admin.username,new_admin.password)
 
-    def login_admin(self, username: str, password: str) -> AdminLoginEvent | AdminNotFoundEvent:
+    def login_admin(self, username: str, password: str) -> AdminLoginEvent | AdminAlreadyExistEvent:
         existing_admin = self.admin_repository.signin_admin(username, password)
         if not existing_admin:
             # User not found, return failure event
-            return AdminNotFoundEvent(username, password, "CSOperator not found")
+            return AdminAlreadyExistEvent(username, password, "CSOperator not found")
 
         return AdminLoginEvent(existing_admin.sys_admin_id,username, password)
 

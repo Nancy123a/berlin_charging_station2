@@ -1,13 +1,14 @@
 # domain/services/user_service.py
 from src.register_context.domain.entities.users import User
-from src.register_context.domain.events.UserCreatedEvent import UserCreatedEvent
+from src.register_context.domain.events.UserAlreadyExistEvent import UserAlreadyExistEvent
 from src.register_context.domain.events.UserLoginEvent import UserLoginEvent
-from src.register_context.domain.events.UserNotFoundEvent import UserNotFoundEvent
+from src.register_context.domain.events.UserCreatedEvent import UserCreatedEvent
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
 from src.register_context.domain.value_objects.password import Password
 from src.register_context.domain.events.GetAllUsersEvent import GetAllUsersEvent
 from src.register_context.domain.events.PasswordVerifiedEvent import PasswordVerifiedEvent
 from src.register_context.domain.events.PasswordNotVerifiedEvent import PasswordNotVerifiedEvent
+
 
 class UserService:
     def __init__(self, user_repository: UserRepository):
@@ -25,10 +26,10 @@ class UserService:
         # Check if the user already exists
         
         existing_user = self.user_repository.get_user_by_username(username)
-        if existing_user:
+        if isinstance(existing_user,UserAlreadyExistEvent):
             # User already exists, return failure event
-            return UserNotFoundEvent(username, password, "User already exists")
-
+            return  UserAlreadyExistEvent(username, password, "user already exists")
+        
         # Otherwise, create the user and return success event
         new_user = User(username=username, password=password)
         self.user_repository.add_user(new_user)
@@ -39,7 +40,7 @@ class UserService:
         existing_user = self.user_repository.signin_user(username, password)
         if not existing_user:
             # User not found, return failure event
-            return UserNotFoundEvent(username, password, "User not found")
+            return UserAlreadyExistEvent(username, password, "User already exist")
 
         return UserLoginEvent(existing_user.user_id,username=username, password=password)
     

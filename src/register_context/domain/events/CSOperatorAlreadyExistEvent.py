@@ -1,7 +1,7 @@
 # domain/events/user/user_not_found_event.py
 from datetime import datetime
 
-class UserNotFoundEvent:
+class CSOperatorAlreadyExistEvent:
     def __init__(self, username: str,password:str, reason: str, success: bool = False):
         self.username = username
         self.password=password
@@ -10,7 +10,7 @@ class UserNotFoundEvent:
         self.timestamp = datetime.now()
 
     def __repr__(self):
-        return f"<UserNotFoundEvent(username={self.username}, reason={self.reason}, success={self.success})>"
+        return f"<CSOperatorAlreadyExistEvent(username={self.username}, reason={self.reason}, success={self.success})>"
 
     def as_dict(self):
         return {

@@ -2,7 +2,7 @@
 from datetime import datetime
 
 class PasswordVerifiedEvent:
-    def __init__(password:str, success: bool = False):
+    def __init__(self, password:str, success: bool = False):
         self.password=password
         self.success = True
         self.timestamp = datetime.now()

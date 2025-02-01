@@ -2,7 +2,7 @@
 from src.register_context.domain.entities.csoperator import CSOperator
 from src.register_context.domain.events.CSOperatorCreatedEvent import CSOperatorCreatedEvent
 from src.register_context.domain.events.CSOperatorLoginEvent import CSOperatorLoginEvent
-from src.register_context.domain.events.CSOperatorNotFoundEvent import CSOperatorNotFoundEvent
+from src.register_context.domain.events.CSOperatorAlreadyExistEvent import CSOperatorAlreadyExistEvent
 from src.register_context.infrastructure.repositories.CSOperatorRepository import CSOperatorRepository
 from src.register_context.domain.value_objects.password import Password
 from src.register_context.domain.events.GetAllCSOperatorsEvent import GetAllCSOperatorsEvent
@@ -19,7 +19,7 @@ class CSOperatorService:
         existing_csoperator = self.csoperator_repository.get_csoperator_by_username(username)
         if existing_csoperator:
             # User already exists, return failure event
-            return CSOperatorNotFoundEvent(username, password, "CSOperator already exists")
+            return CSOperatorAlreadyExistEvent(username, password, "CSOperator already exists")
 
         # Otherwise, create the user and return success event
         new_csoperator = CSOperator(username=username, password=password, number_reports_assigned=0)
@@ -31,7 +31,7 @@ class CSOperatorService:
         existing_csoperator = self.csoperator_repository.signin_csoperator(username, password)
         if not existing_csoperator:
             # User not found, return failure event
-            return CSOperatorNotFoundEvent(username, password, "CSOperator not found")
+            return CSOperatorAlreadyExistEvent(username, password, "CSOperator already exists")
 
         return CSOperatorLoginEvent(existing_csoperator.cs_operator_id,username, password)
 

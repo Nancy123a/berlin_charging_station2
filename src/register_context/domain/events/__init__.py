@@ -1,2 +1,0 @@
-from .UserCreatedEvent import UserCreatedEvent
-from .UserNotFoundEvent import UserNotFoundEvent
