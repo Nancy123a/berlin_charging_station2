@@ -306,7 +306,7 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
                     st.error("No data found for the entered Postal Code (PLZ).")
                     station_id = None
                 else:
-                    station_id, station_id_label  = st.selectbox("Select Station", [(station.charging_station.station_id, 'Station ID: ' + str(station.charging_station.station_id) + ' | Street: ' + station.charging_station.street) for station in searched_stations], format_func=lambda x: x[1])
+                    station_id, station_id_label  = st.selectbox("Select Station", [(station.charging_station.station_id, 'Station ID: ' + str(station.charging_station.station_id) + ' | Street: ' + station.charging_station.street) for station in searched_stations.stations], format_func=lambda x: x[1])
             
             else:
                 station_id = None
