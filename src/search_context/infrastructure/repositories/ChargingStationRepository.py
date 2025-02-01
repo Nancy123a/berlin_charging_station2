@@ -15,7 +15,7 @@ class ChargingStationRepository:
         
         query = text("""
             SELECT * FROM chargingstation 
-            WHERE postal_code = :postal_code AND federal_state = 'Berlin'
+            WHERE postal_code = :postal_code AND federal_state = 'Berlin' AND cs_status = 'available'
         """)
 
     
@@ -49,3 +49,10 @@ class ChargingStationRepository:
         query = text("SELECT * FROM chargingstation LIMIT 1")
         result = self.session.execute(query).fetchone()
         return result is None
+    
+    def update_charging_station(self, id: int, status: str) -> bool:
+        """Update a charging station in the database."""
+        query = text("UPDATE chargingstation SET cs_status = :status WHERE station_id = :id")
+        self.session.execute(query, {"id": id, "status": status})
+        self.session.commit()
+        return True

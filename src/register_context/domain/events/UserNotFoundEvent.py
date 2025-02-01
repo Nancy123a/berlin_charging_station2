@@ -7,7 +7,7 @@ class UserNotFoundEvent:
         self.password=password
         self.reason = reason
         self.success = success
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now()
 
     def __repr__(self):
         return f"<UserNotFoundEvent(username={self.username}, reason={self.reason}, success={self.success})>"

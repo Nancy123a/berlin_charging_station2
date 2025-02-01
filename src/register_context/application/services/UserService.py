@@ -5,6 +5,7 @@ from src.register_context.domain.events.UserLoginEvent import UserLoginEvent
 from src.register_context.domain.events.UserNotFoundEvent import UserNotFoundEvent
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
 from src.register_context.domain.value_objects.password import Password
+from src.register_context.domain.events.GetAllUsersEvent import GetAllUsersEvent
 
 class UserService:
     def __init__(self, user_repository: UserRepository):
@@ -34,3 +35,7 @@ class UserService:
             return UserNotFoundEvent(username, password, "User not found")
 
         return UserLoginEvent(existing_user.user_id,username=username, password=password)
+    
+    def get_all_users(self) -> GetAllUsersEvent:
+        all_users = self.user_repository.get_all_users()
+        return GetAllUsersEvent(all_users)

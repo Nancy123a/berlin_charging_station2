@@ -2,6 +2,7 @@
 from src.register_context.domain.entities.admin import Admin
 from src.register_context.domain.value_objects import Password
 from sqlalchemy.orm import Session
+from typing import List
 
 class AdminRepository:
     def __init__(self, session: Session):
@@ -16,4 +17,12 @@ class AdminRepository:
 
     def signin_admin(self, username: str, password: Password) -> bool:
         return self.session.query(Admin).filter_by(username=username,password=password).first()
+    
+    def get_all_admins(self) -> List[Admin]:
+        return self.session.query(Admin).all()
+    
+    def update_admin(self, admin: Admin) -> Admin:
+        updated_admin = self.session.merge(admin)
+        self.session.commit()
+        return updated_admin
  
