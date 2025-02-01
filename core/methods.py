@@ -51,6 +51,9 @@ from src.report_context.domain.events.ReportAlreadyExistsEvent import ReportAlre
 from src.report_context.domain.events.ReportCreateFailedEvent import ReportCreateFailedEvent
 from src.report_context.domain.events.ReportCreateEvent import ReportCreateEvent
 from src.report_context.domain.events.ReportUpdateEvent import ReportUpdateEvent
+from src.report_context.domain.value_objects.report_description import ReportDescription
+from src.report_context.domain.value_objects.report_severity import ReportSeverity
+from src.report_context.domain.value_objects.report_type import ReportType
 
 def sort_by_plz_add_geometry(dfr, dfg, pdict): 
     dframe                  = dfr.copy()
@@ -311,27 +314,26 @@ def make_streamlit_electric_Charging_resid(df, dfr1, dfr2, role, user_id):
             submit_button = st.button("Submit")
             
             if submit_button:
-                if not description:
-                    st.error("Please fill Description")
-                elif not severity:
-                    st.error("Please select Severity")
-                elif not type:
-                    st.error("Please select Type")
-                elif not station_id:
-                    st.error("Please select Station")
-                else:           
-                    report = Report(station_id=station_id, description=description, severity=severity, type=type, user_id=user_id)         
-                    result = report_aggregate_service.report_malfunction(report)
-                    
-                    if isinstance(result, ReportAlreadyExistsEvent):
-                        st.error(result.reason)
-                    elif isinstance(result, ReportCreateFailedEvent):
-                        st.error(result.reason)
-                    elif isinstance(result, ReportCreateEvent):
-                        st.success("Malfunction issue report successfully forwarded")
+                description = ReportDescription(description).value
+                severity = ReportSeverity(severity).value
+                type = ReportType(type).value
+                
+                if not station_id:
+                    st.error("Please enter Postal Code and select Station before submitting")
+                    return
                         
-                        time.sleep(2)
-                        st.rerun()
+                report = Report(station_id=station_id, description=description, severity=severity, type=type, user_id=user_id)         
+                result = report_aggregate_service.report_malfunction(report)
+                
+                if isinstance(result, ReportAlreadyExistsEvent):
+                    st.error(result.reason)
+                elif isinstance(result, ReportCreateFailedEvent):
+                    st.error(result.reason)
+                elif isinstance(result, ReportCreateEvent):
+                    st.success("Malfunction issue report successfully forwarded")
+                    
+                    time.sleep(2)
+                    st.rerun()
             
         except (TypeError, ValueError) as e:
             st.error(e)

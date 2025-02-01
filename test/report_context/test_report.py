@@ -19,6 +19,9 @@ from src.report_context.infrastructure.repositories.ReportRepository import Repo
 from src.report_context.domain.events.ReportAlreadyExistsEvent import ReportAlreadyExistsEvent
 from src.report_context.domain.events.ReportCreateEvent import ReportCreateEvent
 from sqlalchemy.exc import IntegrityError
+from src.report_context.domain.value_objects.report_description import ReportDescription
+from src.report_context.domain.value_objects.report_severity import ReportSeverity
+from src.report_context.domain.value_objects.report_type import ReportType
       
 @pytest.fixture
 def db_session():
@@ -48,7 +51,54 @@ def db_session():
     session.close()
     
     Base.metadata.drop_all(bind=engine)  # Clean up after test
+ 
+def test_report_description_valid():
+    report_description = ReportDescription("Report Description")
+    assert report_description.value == "Report Description"
+
+def test_report_description_invalid():
+    with pytest.raises(TypeError):
+        ReportDescription(123)  # Invalid type
     
+    with pytest.raises(ValueError):
+        ReportDescription("")  # Invalid value
+        
+    with pytest.raises(ValueError):
+        ReportDescription("Shorter")  # Shorter than 10 characters
+
+def test_report_severity_valid():
+    report_severity = ReportSeverity("low")
+    assert report_severity.value == "low"
+    
+    report_severity = ReportSeverity("medium")
+    assert report_severity.value == "medium"
+    
+    report_severity = ReportSeverity("high")
+    assert report_severity.value == "high"
+
+def test_report_severity_invalid():
+    with pytest.raises(TypeError):
+        ReportSeverity(123)  # Invalid type
+    
+    with pytest.raises(ValueError):
+        ReportSeverity("")  # Invalid value
+        
+def test_report_type_valid():
+    report_type = ReportType("hardware")
+    assert report_type.value == "hardware"
+    
+    report_type = ReportType("software")
+    assert report_type.value == "software"
+    
+    report_type = ReportType("connectivity")
+    assert report_type.value == "connectivity"
+
+def test_report_type_invalid():
+    with pytest.raises(TypeError):
+        ReportType(123)  # Invalid type
+    
+    with pytest.raises(ValueError):
+        ReportType("")  # Invalid value
 
 def test_valid_report_instance(db_session):
     report = Report(description = "Report Description", severity = "low", type = "hardware", station_id = 123, user_id = 1, admin_id = 1)
