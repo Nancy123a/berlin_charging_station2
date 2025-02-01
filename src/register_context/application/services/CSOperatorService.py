@@ -7,6 +7,8 @@ from src.register_context.infrastructure.repositories.CSOperatorRepository impor
 from src.register_context.domain.value_objects.password import Password
 from src.register_context.domain.events.GetAllCSOperatorsEvent import GetAllCSOperatorsEvent
 from src.register_context.domain.events.UpdateCSOperatorEvent import UpdateCSOperatorEvent
+from src.register_context.domain.events.PasswordVerifiedEvent import PasswordVerifiedEvent
+from src.register_context.domain.events.PasswordNotVerifiedEvent import PasswordNotVerifiedEvent
 
 class CSOperatorService:
     def __init__(self, csoperator_repository: CSOperatorRepository):
@@ -34,7 +36,12 @@ class CSOperatorService:
         return CSOperatorLoginEvent(existing_csoperator.cs_operator_id,username, password)
 
     def verify_password(self,password:str):
-        return Password(password)
+        try:
+            # Convert postal_code string to PostalCode object
+            new_password = Password(password)
+            return PasswordVerifiedEvent(new_password)
+        except ValueError as e:
+            return PasswordNotVerifiedEvent(Password(password),str(e))
     
     def get_all_csoperators(self) -> GetAllCSOperatorsEvent:
         all_csoperators = self.csoperator_repository.get_all_csoperators()

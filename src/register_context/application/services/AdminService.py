@@ -7,6 +7,8 @@ from src.register_context.infrastructure.repositories.AdminRepository import Adm
 from src.register_context.domain.value_objects.password import Password
 from src.register_context.domain.events.GetAllAdminsEvent import GetAllAdminsEvent
 from src.register_context.domain.events.UpdateAdminEvent import UpdateAdminEvent
+from src.register_context.domain.events.PasswordVerifiedEvent import PasswordVerifiedEvent
+from src.register_context.domain.events.PasswordNotVerifiedEvent import PasswordNotVerifiedEvent
 
 class AdminService:
     def __init__(self, admin_repository: AdminRepository):
@@ -34,7 +36,12 @@ class AdminService:
         return AdminLoginEvent(existing_admin.sys_admin_id,username, password)
 
     def verify_password(self,password:str):
-        return Password(password)
+        try:
+            # Convert postal_code string to PostalCode object
+            new_password = Password(password)
+            return PasswordVerifiedEvent(new_password)
+        except ValueError as e:
+            return PasswordNotVerifiedEvent(Password(password),str(e))
     
     def get_all_admins(self) -> GetAllAdminsEvent:
         all_admins = self.admin_repository.get_all_admins()

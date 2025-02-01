@@ -6,13 +6,20 @@ from src.register_context.domain.events.UserNotFoundEvent import UserNotFoundEve
 from src.register_context.infrastructure.repositories.UserRepository import UserRepository
 from src.register_context.domain.value_objects.password import Password
 from src.register_context.domain.events.GetAllUsersEvent import GetAllUsersEvent
+from src.register_context.domain.events.PasswordVerifiedEvent import PasswordVerifiedEvent
+from src.register_context.domain.events.PasswordNotVerifiedEvent import PasswordNotVerifiedEvent
 
 class UserService:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
     def verify_password(self,password:str):
-        return Password(password)
+        try:
+            # Convert postal_code string to PostalCode object
+            new_password = Password(password)
+            return PasswordVerifiedEvent(new_password)
+        except ValueError as e:
+            return PasswordNotVerifiedEvent(Password(password),str(e))
 
     def register_user(self, username: str, password: str) -> UserCreatedEvent:
         # Check if the user already exists

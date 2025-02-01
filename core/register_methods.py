@@ -43,6 +43,7 @@ from src.register_context.domain.entities.csoperator import CSOperator
 from src.search_context.domain.entities.chargingstation import ChargingStation
 
 from src.register_context.domain.value_objects.password import Password
+from src.register_context.domain.events.PasswordVerifiedEvent import PasswordVerifiedEvent
 
 def inspect_and_create_tables():
     table_names = ['chargingstation','user', 'admin','csoperators','report', 'notification']  # Table names to check
@@ -80,13 +81,14 @@ def register_login():
                 repository = repository_class(SessionLocal())
                 service = service_class(repository)
                 
-                service.verify_password(password)
-                event = getattr(service, login_method)(username, password)
+                event_password=service.verify_password(password)
+                if isinstance(event_password, PasswordVerifiedEvent):
+                    event = getattr(service, login_method)(username, password)
 
-                if isinstance(event, event_class):
-                    return role, event.user_id if role == "user" else event.sys_admin_id if role == "admin" else event.cs_operator_id
-                elif isinstance(event, not_found_class):
-                    st.error("Invalid username or password")
+                    if isinstance(event, event_class):
+                        return role, event.user_id if role == "user" else event.sys_admin_id if role == "admin" else event.cs_operator_id
+                    elif isinstance(event, not_found_class):
+                        st.error("Invalid username or password")
             except (TypeError, ValueError) as e:
                 st.error(e)
 
@@ -116,14 +118,15 @@ def register_login():
                 repository = repository_class(SessionLocal())
                 service = service_class(repository)
                 
-                service.verify_password(new_password)
-                event = getattr(service, register_method)(new_username, new_password)
-
-                if isinstance(event, created_class):
-                    st.success("Registration successful!")
-                    return role, None
-                elif isinstance(event, not_found_class):
-                    st.error("Username already exists")
+                event_password=service.verify_password(new_password)
+                if isinstance(event_password, PasswordVerifiedEvent):
+                    event = getattr(service, register_method)(new_username, new_password)
+    
+                    if isinstance(event, created_class):
+                        st.success("Registration successful!")
+                        return role, None
+                    elif isinstance(event, not_found_class):
+                        st.error("Username already exists")
             except (TypeError, ValueError) as e:
                 st.error(e)
 
