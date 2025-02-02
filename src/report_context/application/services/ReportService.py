@@ -1,6 +1,5 @@
 from src.report_context.infrastructure.repositories.ReportRepository import ReportRepository
 from src.report_context.domain.entities.report import Report
-from src.report_context.domain.events.ReportDeleteEvent import ReportDeleteEvent
 from src.report_context.domain.events.ReportUpdateEvent import ReportUpdateEvent
 from src.report_context.domain.events.GetAllReportsEvent import GetAllReportsEvent
 from src.report_context.domain.events.GetAdminReportsEvent import GetAdminReportsEvent
@@ -37,8 +36,3 @@ class ReportService:
       """Update a report in the database."""
       updated_event = self.report_repository.update_report(report)
       return ReportUpdateEvent(updated_event)
-      
-  def delete_report(self, report_id: int) -> ReportDeleteEvent:
-      """Delete a report from the database."""
-      result = self.report_repository.delete_report(report_id) 
-      return ReportDeleteEvent(report_id, result)

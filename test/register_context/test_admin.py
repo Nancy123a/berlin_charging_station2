@@ -10,7 +10,12 @@ sys.path.append(str(project_root))
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database.database import Base, SessionLocal
-from src.register_context.domain.entities.admin import Admin  # Assuming you have this model in admins.py
+from src.register_context.domain.entities.admin import Admin
+from src.report_context.domain.entities.notification import Notification
+from src.register_context.domain.entities.users import User
+from src.register_context.domain.entities.csoperator import CSOperator
+from src.search_context.domain.entities.chargingstation import ChargingStation
+from src.report_context.domain.entities.report import Report
 
 # Helper functions to interact with the database
 def create_admin_in_db(db_session, admin):
@@ -83,5 +88,5 @@ def test_create_admin_with_duplicate_username(db_session):
     duplicate_admin = Admin(username="duplicate_admin", password="AnotherAdminPassword@", number_reports_assigned=2)
     
     # Expecting an IntegrityError due to unique constraint on the username column
-    with pytest.raises(TypeError):
+    with pytest.raises(IntegrityError):
         create_admin_in_db(db_session, duplicate_admin)

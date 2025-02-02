@@ -14,27 +14,27 @@ def test_valid_password():
 
 def test_password_too_short():
     """Test password that's too short (less than 8 characters)."""
-    with pytest.raises(TypeError, match="Password must be at least 8 characters long."):
+    with pytest.raises(ValueError, match="Password must be at least 8 characters long."):
         Password(value="Short1!")
         
 def test_password_missing_uppercase():
     """Test password missing an uppercase letter."""
-    with pytest.raises(TypeError, match="Password must contain at least one uppercase letter (A-Z)."):
+    with pytest.raises(ValueError, match="Password must contain at least one uppercase letter (A-Z)."):
         Password(value="nouppercase1!")
         
 def test_password_missing_lowercase():
     """Test password missing a lowercase letter."""
-    with pytest.raises(TypeError, match="Password must contain at least one lowercase letter (a-z)."):
+    with pytest.raises(ValueError, match="Password must contain at least one lowercase letter (a-z)."):
         Password(value="NOLOWERCASE1!")
         
 def test_password_missing_digit():
     """Test password missing a numeric digit."""
-    with pytest.raises(TypeError, match="Password must contain at least one numeric digit (0-9)."):
+    with pytest.raises(ValueError, match="Password must contain at least one numeric digit (0-9)."):
         Password(value="NoDigitHere!")
         
 def test_password_missing_special_character():
     """Test password missing a special character."""
-    with pytest.raises(TypeError, match="Password must contain at least one special character (e.g., !@#$%^&*)."):
+    with pytest.raises(ValueError, match="Password must contain at least one special character (e.g., !@#$%^&*)."):
         Password(value="NoSpecialChar1")
         
 def test_password_with_special_characters():
@@ -44,10 +44,10 @@ def test_password_with_special_characters():
 
 def test_password_not_string():
     """Test password is not a string."""
-    with pytest.raises(ValueError, match="Password value must be a string, got int"):
+    with pytest.raises(TypeError, match="Password value must be a string, got int"):
         Password(value=12345678)  # Password is passed as an integer instead of a string
 
 def test_password_empty():
     """Test empty password."""
-    with pytest.raises(TypeError, match="Password must be at least 8 characters long."):
+    with pytest.raises(ValueError, match="Password must be at least 8 characters long."):
         Password(value="")  # Empty password should fail validation

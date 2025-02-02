@@ -83,5 +83,5 @@ def test_create_cs_operator_with_duplicate_username(db_session):
     duplicate_operator = CSOperator(username="duplicate_operator", password="AnotherOperatorPassword@", number_reports_assigned=2)
     
     # Expecting an IntegrityError due to unique constraint on the username column
-    with pytest.raises(TypeError):
+    with pytest.raises(IntegrityError):
         create_cs_operator_in_db(db_session, duplicate_operator)

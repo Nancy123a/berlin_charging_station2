@@ -35,10 +35,3 @@ class ReportRepository:
       updated_report = self.session.merge(report)
       self.session.commit()
       return updated_report
-
-  def delete_report(self, report_id: int) -> bool:
-      """Delete a report from the database."""
-      report = self.session.query(Report).filter_by(report_id=report_id).first()
-      self.session.delete(report)
-      self.session.commit()   
-      return True  
