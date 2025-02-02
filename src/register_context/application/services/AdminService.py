@@ -32,7 +32,7 @@ class AdminService:
         existing_admin = self.admin_repository.signin_admin(username, password)
         if not existing_admin:
             # User not found, return failure event
-            return AdminNotFounEvent(username, password, "CSOperator not found")
+            return AdminNotFoundEvent(username, password, "CSOperator not found")
 
         return AdminLoginEvent(existing_admin.sys_admin_id,username, password)
 

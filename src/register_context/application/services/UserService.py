@@ -23,6 +23,14 @@ class UserService:
         except ValueError as e:
             return PasswordNotVerifiedEvent(Password(password),str(e))
 
+    def login_user(self, username: str, password: str) -> UserLoginEvent:
+        existing_user = self.user_repository.signin_user(username, password)
+        if not existing_user:
+            # User not found, return failure event
+            return UserNotFoundEvent(username, password, "User not found")
+
+        return UserLoginEvent(existing_user.user_id,username=username, password=password)
+
     def register_user(self, username: str, password: str) -> UserCreatedEvent:
         # Check if the user already exists
         
