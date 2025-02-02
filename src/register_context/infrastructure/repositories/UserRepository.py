@@ -10,6 +10,9 @@ class UserRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    def signin_user(self, username: str, password: str) -> User:
+        return self.session.query(User).filter_by(username=username,password=password).first()
+
     def get_user_by_username(self, username: str) -> UserAlreadyExistEvent | User:
         user=self.session.query(User).filter(User.username == username).first()
         if user:
