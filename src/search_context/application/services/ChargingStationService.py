@@ -25,8 +25,8 @@ class ChargingStationService:
 
 
     def is_table_empty(self) -> bool:
-        return self.chargingstation_repository.is_table_empty()
+        return self.station_repository.is_table_empty()
     
     def update_charging_station(self, id: int, status: str) -> StationUpdateEvent:
-        success = self.chargingstation_repository.update_charging_station(id, status)
+        success = self.station_repository.update_charging_station(id, status)
         return StationUpdateEvent(id, status, success)
