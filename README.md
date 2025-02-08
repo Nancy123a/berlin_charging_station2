@@ -2,6 +2,8 @@ Electric mobility plays a crucial role in reducing greenhouse gas emissions. As 
 
 The Streamlit application: https://berlincharging.streamlit.app/
 
+Documentation: 14_final_documentation.pdf
+
 Code Documentation:
 Program:
 
